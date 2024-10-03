@@ -1,0 +1,114 @@
+ @startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+participant DrivingApplication
+participant User
+participant SignatureInteractionComponent
+participant EUDIW
+participant AuthorizationServer
+participant CertificateIssuer
+participant SSA
+participant QTSP
+
+opt Activation of Remote Signing service 
+note right of EUDIW
+ User does not posses certificate QEAA (OIDC4VCI for remote sign)
+end note 
+activate User
+User -> CertificateIssuer: Request qualified certificate
+activate CertificateIssuer
+  CertificateIssuer -> CertificateIssuer: display Credential offer link
+  return webpage/deep link
+User -> EUDIW **: 
+activate EUDIW
+  EUDIW -> EUDIW: scan credential offer
+EUDIW -> CertificateIssuer: Credential Offer
+  activate CertificateIssuer
+  return credential specs
+EUDIW -> CertificateIssuer: Get issuer metadata
+  activate CertificateIssuer
+  return metadata 
+EUDIW -> CertificateIssuer: Authorization request
+  activate CertificateIssuer
+  note left of QTSP: OIDC4VP flow ommitted for simplicity of complex diagram
+  CertificateIssuer -> AuthorizationServer: redirect to authorization
+  activate AuthorizationServer
+    AuthorizationServer -> AuthorizationServer: perform OIDC4VP authentication 
+  AuthorizationServer --> EUDIW:  code + state
+  deactivate AuthorizationServer
+  deactivate CertificateIssuer
+EUDIW -> AuthorizationServer: /token
+  activate AuthorizationServer
+  return Access Token
+EUDIW -> CertificateIssuer: Credential Request with Access Token 
+  activate CertificateIssuer
+  CertificateIssuer -> AuthorizationServer: /userinfo with Access token
+  activate AuthorizationServer  
+    return User data
+  CertificateIssuer -> QTSP: issue qualified certificate
+    activate QTSP
+      QTSP -> QTSP: Issue certificate, activate Remote Sign Service
+    return qualified certificate
+   
+
+  return Certificate as QEAA
+  EUDIW -> EUDIW: store certificate as Attestation
+
+deactivate User
+deactivate EUDIW
+deactivate CertificateIssuer
+end
+
+note right of DrivingApplication: We assume that Service Provider will not make document available for EUDIW 
+activate DrivingApplication
+DrivingApplication -> DrivingApplication: Display documents
+DrivingApplication -> AuthorizationServer: CSC 2.0 /csc/v2/oauth2/authorize
+note left
+  Create authorization request for signing
+end note
+activate AuthorizationServer
+AuthorizationServer -> SignatureInteractionComponent: display QR kod for documents signature and QEAA
+activate SignatureInteractionComponent
+  SignatureInteractionComponent->SignatureInteractionComponent: Display QR code
+activate User
+
+
+User -> EUDIW: scan QR code
+
+note right of SignatureInteractionComponent
+  Presentation with Certificate Attestation
+end note 
+
+  note right of AuthorizationServer
+    Either OIDC4VP or SIOP2 is used, OIDC4VP will be used in PoC
+end note
+ activate EUDIW
+
+  EUDIW -> EUDIW: authenticate and choose credential
+  EUDIW -> AuthorizationServer: /direct_post.jwt with presentations
+  activate AuthorizationServer
+    return thankyou
+ AuthorizationServer -> DrivingApplication: /callback with code 
+ DrivingApplication -> AuthorizationServer: /token
+ activate AuthorizationServer
+  return access_token + SAD
+DrivingApplication -> SSA: /csc/v2/signatures/signDoc
+  activate SSA
+    SSA -> QTSP: get qualified certificate 
+      activate QTSP
+      return qualified certificate
+    SSA -> AuthorizationServer: sign SAD
+      activate AuthorizationServer
+      return SAD_CEN signed
+    SSA -> QTSP: /sign
+    activate QTSP
+      QTSP -> QTSP: Sign hashes
+      return signatures
+  return signatures
+
+    
+  
+@enduml
+ 

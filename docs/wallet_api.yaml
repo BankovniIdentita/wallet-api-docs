@@ -1,0 +1,3993 @@
+openapi: 3.0.0
+info:
+  title: Bank iD Wallet APIs
+  version: 1.3.0
+  description: |
+    Describes APIs to be implemented by Bank iD.
+
+    * Version 1.0.0
+      * the first version of the document for POC purposes
+    </details>
+
+    <details>
+    <summary>**Basic Information**</summary>
+    Bank iD is only required to implement APIs that are specified in this document, as that is what will be used by the SeP.
+    However for additional explanations and details, it is strongly recommended that readers are familiar 
+    with the specifications below.
+
+
+    **Source material and relevant modifications:**
+
+    * [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html) OpenID Connect Core 1.0
+
+        * Signed and encrypted JWTs MAY be used for /userinfo and /profile responses
+
+        * In Service Provider's Bank iD relationship the UserInfo Claims MUST be returned as the 
+        members of a JSON object unless a signed or encrypted response was requested during 
+        Client Registration.
+
+        * The sub (subject) Claim MUST always be returned in the UserInfo Response.
+
+        * If a Claim is not returned, that Claim Name SHOULD be omitted from the JSON object 
+        representing the Claims; it SHOULD NOT be present with a null or empty string value.
+
+        * The sub Claim in the UserInfo and Profile Response MUST be verified to exactly match the sub Claim 
+        in the ID Token; if they do not match, the UserInfo Response values MUST NOT be used.
+
+        * The UserInfo and Profile Endpoint MUST return a content-type header to indicate which format is 
+        being returned and if the response body is a text JSON object; the response body SHOULD 
+        be encoded using UTF-8.
+
+        * If the UserInfo or Profile Response is signed and/or encrypted, then the Claims are returned in a 
+        JWT and the content-type MUST be application/jwt. The response MAY be encrypted without 
+        also being signed. If both signing and encryption are requested, the response MUST be 
+        signed then encrypted, with the result being a Nested JWT.
+
+      * [OpenID.IdentityAssurance](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html) 
+      OpenID Connect for Identity Assurance 1.0
+
+        * The `txn` Claim as defined in [RFC8417](https://tools.ietf.org/html/rfc8417) is used 
+        in the context of Bank iD data exchange to build audit trails across the parties involved 
+        in an OpenID Connect transaction. Claim txn is always REQUIRED in the userinfo response 
+        content.
+
+        * This arrangement introduces the possibility for the bank to separate the verified
+         Claims within a container element `verified_claims`. This container is composed of the 
+         verification evidence related to a certain verification process and the corresponding 
+         Claims about the End-User which were verified in this process.
+
+        * Implementations MUST ignore any sub-element not defined in this specification or 
+        extensions of this specification.
+
+        * In the case of this definition verification element MUST consist of the following elements:
+
+          * `trust_framework`: REQUIRED. String determining the trust framework governing the 
+          identity verification process. For example, the value of ``cz_aml`` for verification 
+          according to the Czech AML law.
+
+          * `time`: OPTIONAL. Time stamp in ISO 8601:2004 [ISO8601-2004] YYYY-MM-DDThh:mm:ss±hh 
+          format representing the date and time when identity verification took place.
+
+          * `verification_process`: REQUIRED. In the case of this specification, the verification 
+          process shall include the PID issuer identification as stated in PID, which is issuing authority listed in EU trust list
+
+        * Verified Claims can be requested on the level of individual Claims about the End-User 
+        by utilizing the claims parameter as defined in Section 5.5. of the OpenID Connect 
+        specification [OpenID](https://openid.net/specs/openid-connect-core-1_0.html#ClaimsParameter)
+
+    * [OpenID.Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) OpenID Connect Discovery 1.0
+
+    * [OpenID.SessionManagement](https://openid.net/specs/openid-connect-session-1_0.html) OpenID Session Management 1.0
+
+    * [OpenID.Front-ChannelLogout](https://openid.net/specs/openid-connect-frontchannel-1_0.html)
+
+    * [OpenID.Back-ChannelLogout](https://openid.net/specs/openid-connect-backchannel-1_0.html)
+
+    * [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636) Proof Key for Code Exchange by OAuth Public Clients
+
+    * [RFC6749](https://tools.ietf.org/html/rfc6749) The OAuth 2.0 Authorization Framework
+
+    * [RFC6750](https://tools.ietf.org/html/rfc6750) The OAuth 2.0 Authorization Framework: Bearer Token Usage
+
+    * [RFC7662](https://tools.ietf.org/html/rfc7662) OAuth 2.0 Token Introspection
+
+    * [RFC7517](https://tools.ietf.org/html/rfc7517) JSON Web Key (JWK)
+    </details>
+
+security:
+  - profile:
+      - profile.name
+      - profile.titles
+      - profile.gender
+      - profile.birthdate
+      - profile.birthnumber
+      - profile.birthplaceNationality
+      - profile.maritalstatus
+      - profile.addresses
+      - profile.idcards
+      - profile.paymentAccounts
+      - profile.email
+      - profile.phonenumber
+      - profile.updatedat
+      - profile.legalstatus
+      - profile.verification
+      - service
+      - credential
+
+servers:
+  - url: https://wallet.sandbox.bankid.cz/
+paths:
+  /oauth2/authorize:
+    get:
+      summary: Begin the Bank iD authentication flow
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      description: |
+        This GET endpoint is a starting point for OAuth2 and OpenID Connect authorization flows.Code grant and implicit grant is supported by Authorization. Is strictly recommended to 
+        use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+
+        **Technical scopes** (used in the `scope` query parameter):
+        - openid (always required scope)  
+        - offline_access (the scope must be specified if a refresh_token release is required)
+
+      tags:
+        - Authorization Request
+      parameters:
+        - $ref: '#/components/parameters/auth_redirect_uri'
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_response_type'
+        - $ref: '#/components/parameters/auth_id_token_hint'
+        - $ref: '#/components/parameters/auth_nonce'
+        - $ref: '#/components/parameters/auth_state'
+        - $ref: '#/components/parameters/auth_scope'
+        - $ref: '#/components/parameters/auth_acr_values'
+        - $ref: '#/components/parameters/auth_max_age'
+        - $ref: '#/components/parameters/auth_response_mode'
+        - $ref: '#/components/parameters/auth_ui_locales'
+
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+                Redirect the End-User to `redirect_uri` after giving consent in Wallet's consent screen
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+                  description: Redirect successful
+
+      responses:
+        '302':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client redirect_uri with an authorization code or access_token 
+            (in case of successful authentication) or an error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Location:
+              description: |
+                Redirect response to endpoint specified in redirect_uri with parameters:
+                `code` Authorization Code.
+                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
+              schema:
+                type: string
+                format: uri
+              example: |
+                HTTP/1.1 302 Found
+                Location: https://service.example.cz/callback?
+                    code=123456
+                    &state=jdpi9hu1HH
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+
+    post:
+      summary: Begin the Bank iD authentication flow
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      description: >-
+        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
+        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+      tags:
+        - Authorization Request
+      parameters:
+        - $ref: '#/components/parameters/auth_redirect_uri'
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_response_type'
+        - $ref: '#/components/parameters/auth_id_token_hint'
+        - $ref: '#/components/parameters/auth_nonce'
+        - $ref: '#/components/parameters/auth_state'
+        - $ref: '#/components/parameters/auth_scope'
+        - $ref: '#/components/parameters/auth_acr_values'
+        - $ref: '#/components/parameters/auth_max_age'
+        - $ref: '#/components/parameters/auth_response_mode'
+        - $ref: '#/components/parameters/auth_ui_locales'
+        - $ref: '#/components/parameters/auth_claims'
+
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+
+                Redirect the End-User to `redirect_uri` after giving consent in bank's "HTML showing consent screen"
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+      responses:
+        '200':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client 
+            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
+            error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationRequestResponse'
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+  /callback:
+    get:
+      tags:
+        - Wallet Callback
+      description: |
+        API used by Wallet for returning presentations in HTTP GET flavor. 
+        Returns callback url for user-agent redirection
+
+      parameters:
+        - $ref: '#/components/parameters/callback_vp_token'
+        - $ref: '#/components/parameters/callback_id_token'
+        - $ref: '#/components/parameters/callback_presentation_submission'
+      responses:
+        '302':
+          description: |
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Location:
+              description: |
+                Redirect response to endpoint specified in redirect_uri with parameters:
+                `code` Authorization Code.
+                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
+              schema:
+                type: string
+                format: uri
+              example: |
+                HTTP/1.1 302 Found
+                Location: https://service.example.cz/callback?
+                    code=123456
+                    &state=jdpi9hu1HH
+    post:
+      description: API used by Wallet for returning presentations in HTTP POST flavor. Used for direct_post and direct_post.jwt mode
+      tags:
+        - Wallet Callback
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/wallet_post_callback'
+                - $ref: '#/components/schemas/wallet_post_jwt_callback'
+
+      responses:
+        '200':
+          description: Valid response
+          content:
+            application/json:
+              schema:
+                properties:
+                  redirect_uri:
+                    description: Uri pro original User Agent, Wallet uses this URI to redirect in user's device. Used in same device flows.
+
+  /oauth2/token:
+    post:
+      summary: Acquire a new set of tokens
+      externalDocs:
+        description: 'The OAuth 2.0 Authorization Framework'
+        url: https://tools.ietf.org/html/rfc6749
+      description: >-
+        The token endpoint is used by the client to obtain an access token by presenting its authorization grant or refresh token.
+
+
+        The means through which the client obtains the location of the token endpoint are beyond the scope of this specification, but the location
+        is typically provided in the service documentation. The endpoint URI **MUST NOT** include a fragment component.
+
+
+        Since requests to the token endpoint result in the transmission of clear-text credentials (in the HTTP request and response), the
+        authorization server **MUST** require the use of TLS when sending requests to the token endpoint.
+
+
+        If the Client is a Confidential Client, then it **MUST** authenticate to the token endpoint using the authentication method registered for its client_id,
+        as described in Section 9 of [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication). 
+
+
+        Parameters sent without a value **MUST** be treated as if they were omitted from the request. The authorization server MUST ignore
+        unrecognized request parameters. Request and response parameters **MUST NOT** be included more than once.
+      tags:
+        - Token management
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
+              description: |-
+                In case of issuing access token from authorization code:
+                 - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
+
+
+                PKCE and refreshing access token is not supported for now
+              example:
+                grant_type: authorization_code
+                code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+                redirect_uri: 'https://rp.example.com/callback'
+      responses:
+        '200':
+          description: 'Request for token was successful'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - 'no-store'
+            Pragma:
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+        '400':
+          $ref: '#/components/responses/TokenErrorResponse'
+        '401':
+          $ref: '#/components/responses/TokenErrorResponseBadCredentials'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+
+  /oauth2/token-info:
+    post:
+      summary: Decode and obtain token metadata
+      externalDocs:
+        description: 'Official documentation for OAuth 2.0 Token Introspection'
+        url: 'https://tools.ietf.org/html/rfc7662'
+      description:
+        The introspection endpoint is an OAuth 2.0 endpoint that takes a parameter representing an OAuth 2.0 token and returns a JSON
+        representing the meta information surrounding the token, including whether this token is currently active.
+
+      security:
+        - AccessTokenAuth: []
+      tags:
+        - Token management
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenIntrospectionRequest'
+          application/jwt:
+            schema:
+              $ref: '#/components/schemas/TokenIntrospectionRequest'
+      responses:
+        '200':
+          description: 'Token information was obtained'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenInfoResponse'
+            application/jwt:
+              schema:
+                $ref: '#/components/schemas/TokenInfoResponse'
+        '400':
+          $ref: '#/components/responses/TokenErrorResponse'
+        '401':
+          $ref: '#/components/responses/TokenErrorResponseInvalidClient'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+
+  /status:
+    get:
+      summary: Polling API for retrieving status of authentication via Wallet
+      description: |
+        Status endpoint is custom endpoint for browser and server-sice polling of authorization request status. 
+        This endpoint provides lightweight option for obtaining information and consequent actions by Service Provider.
+      tags:
+        - Polling
+      parameters:
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_state'
+      responses:
+        '200':
+          description: Valid response
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollingResponse'
+              example:
+                status: DONE
+                state: 'ab123456'
+
+  /userinfo:
+    get:
+      summary: Returns basic Claims about the authenticated End-User
+      description: |
+        The UserInfo Endpoint is an OAuth 2.0 Protected Resource that returns Claims about the authenticated End-User. To obtain the requested Claims about the End-User, the Client makes 
+        a request to the UserInfo Endpoint using an Access Token obtained through OpenID Connect Authentication. These Claims are normally represented by a JSON object that contains a collection 
+        of name and value pairs for the Claims.
+
+        Supported scopes (claims):
+        - profile.name (given_name, family_name, middle_name, nickname, preferred_username)
+        - profile.titles (title_prefix, title_suffix)
+        - profile.gender (gender)
+        - profile.birthdate (birthdate, age, date_of_death)
+        - profile.birthnumber (birthnumber)
+        - profile.birthplaceNationality (birthplace, birthcountry, primary_nationality, nationalities)
+        - profile.maritalstatus (maritalstatus)
+        - profile.addresses (addresses.*)
+        - profile.idcards (idcards.*)
+        - profile.paymentAccounts (paymentAccounts, paymentAccountsDetails)
+        - profile.email (email)
+        - profile.phonenumber (phone_number)
+        - profile.updatedat (updated_at)
+        - profile.legalstatus (majority, pep, limited_legal_capacity)
+
+        Technical scopes:
+        - openid (always required scope)
+        - offline_access (the scope must be specified if a refresh_token release is required)
+        - notification.claims_updated (notification service)
+
+      security:
+        - Bearer: []
+      tags:
+        - User Info
+      responses:
+        '200':
+          description: 'OK'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/userInfo'
+              examples:
+                userInfo:
+                  $ref: '#/components/examples/userInfo'
+            application/jwt:
+              schema:
+                type: string
+                format: binary
+              example: ewoidHlwIjoiVXNlcmluZm8iLAoiYWxnIjoiSFMyNTYiCn0K.ewoic3ViIjogIjIzZjFhYzAwLTVkNTQtNDE2OS1hMjg4LTc5NGFlMmVhZDBjNCIsCiJuYW1lIjogIkphbiBOb3bDoWsiLAoiZ2l2ZW5fbmFtZSI6ICJKYW4iLAogIAkiZmFtaWx5X25hbWUiOiAiTm92w6FrIiwKICAJIm1pZGRsZV9uYW1lIjogIiIsCiAgCSJuaWNrbmFtZSI6ICJab3JybyIsCiAgCSJwcmVmZXJyZWRfdXNlcm5hbWUiOiAiSmFuIiwKIAkiZW1haWwiOiAiSi5ub3Zha0BlbWFpbC5jb20iLAogIAkiZW1haWxfdmVyaWZpZWQiOiB0cnVlLAogIAkiZ2VuZGVyIjogIm1hbGUiLAogIAkiYmlydGhkYXRlIjogIjE5NzAtMDgtMDEiLAogIAkiem9uZWluZm8iOiAiRXVyb3BlL1ByYWd1ZSIsCiAgCSJsb2NhbGUiOiAiY3NfQ1oiLAogIAkicGhvbmVfbnVtYmVyIjogIis0MjAxMjM0NTY3ODkiLAogIAkicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjogZmFsc2UsCiAidXBkYXRlZF9hdCI6IDE1NjgxODg0MzMwMDAKfQo=.cDEuITlDHi14RUEGG3cxEWoXFzZWIG46JmMWZu+/vXImNBh0QUXlgq07xbYWYzF2biUl77+9dXZ2XAEjbFg1fgEDKRXYrgUuCm8kWzNKHgQKIARNPhIBMHlbMtS9O0FmZRl5I31w07FdPC4ndUVkRBd6Dj4nWmEKe9aHHjFgAxFIUTI8bgFbPfK6lbcXLFZsWVZpKBw0MmlUPQFw
+        '401':
+          description: 'Unauthorized request'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unauthorized'
+              example:
+                error: UNAUTHORIZED
+                error_description: 'Invalid/missing access token'
+        '403':
+          description: 'Request was forbidden'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forbidden'
+              example:
+                error: FORBIDDEN
+                error_description: 'Authentication with an expired access token or bearer access token having insufficient privileges'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+
+  /profile:
+    get:
+      summary: Returns an extended (down to AML) set of authenticated End-User information.
+      description: |
+        The Profile Endpoint is an OAuth 2.0 Protected Resource that returns Claims about the authenticated End-User.
+
+        Supported scopes (claims):
+        - profile.name (given_name, family_name, middle_name, nickname, preferred_username)
+        - profile.titles (title_prefix, title_suffix)
+        - profile.gender (gender)
+        - profile.birthdate (birthdate, age, date_of_death)
+        - profile.birthnumber (birthnumber)
+        - profile.birthplaceNationality (birthplace, birthcountry, primary_nationality, nationalities)
+        - profile.maritalstatus (maritalstatus)
+        - profile.addresses (addresses.*)
+        - profile.idcards (idcards.*)
+        - profile.paymentAccounts (paymentAccounts, paymentAccountsDetails)
+        - profile.email (email)
+        - profile.phonenumber (phone_number)
+        - profile.updatedat (updated_at)
+        - profile.legalstatus (majority, pep, limited_legal_capacity)
+
+        Technical scopes:
+        - openid (always required scope)
+        - offline_access (the scope must be specified if a refresh_token release is required)
+        - notification.claims_updated (notification service)
+
+      security:
+        - Bearer: []
+      tags:
+        - Identify
+      responses:
+        '200':
+          description: 'OK'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/profile'
+              examples:
+                profile:
+                  $ref: '#/components/examples/profile'
+            application/jwt:
+              schema:
+                type: string
+                format: binary
+              example: ewoidHlwIjoiVXNlcmluZm8iLAoiYWxnIjoiSFMyNTYiCn0K.ewoic3ViIjogIjIzZjFhYzAwLTVkNTQtNDE2OS1hMjg4LTc5NGFlMmVhZDBjNCIsCiJuYW1lIjogIkphbiBOb3bDoWsiLAoiZ2l2ZW5fbmFtZSI6ICJKYW4iLAogIAkiZmFtaWx5X25hbWUiOiAiTm92w6FrIiwKICAJIm1pZGRsZV9uYW1lIjogIiIsCiAgCSJuaWNrbmFtZSI6ICJab3JybyIsCiAgCSJwcmVmZXJyZWRfdXNlcm5hbWUiOiAiSmFuIiwKIAkiZW1haWwiOiAiSi5ub3Zha0BlbWFpbC5jb20iLAogIAkiZW1haWxfdmVyaWZpZWQiOiB0cnVlLAogIAkiZ2VuZGVyIjogIm1hbGUiLAogIAkiYmlydGhkYXRlIjogIjE5NzAtMDgtMDEiLAogIAkiem9uZWluZm8iOiAiRXVyb3BlL1ByYWd1ZSIsCiAgCSJsb2NhbGUiOiAiY3NfQ1oiLAogIAkicGhvbmVfbnVtYmVyIjogIis0MjAxMjM0NTY3ODkiLAogIAkicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjogZmFsc2UsCiAidXBkYXRlZF9hdCI6IDE1NjgxODg0MzMwMDAKfQo=.cDEuITlDHi14RUEGG3cxEWoXFzZWIG46JmMWZu+/vXImNBh0QUXlgq07xbYWYzF2biUl77+9dXZ2XAEjbFg1fgEDKRXYrgUuCm8kWzNKHgQKIARNPhIBMHlbMtS9O0FmZRl5I31w07FdPC4ndUVkRBd6Dj4nWmEKe9aHHjFgAxFIUTI8bgFbPfK6lbcXLFZsWVZpKBw0MmlUPQFw
+        '401':
+          description: 'Unauthorized request'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unauthorized'
+              example:
+                error: 'UNAUTHORIZED'
+                error_description: 'Invalid/missing access token'
+        '403':
+          description: 'Request was forbidden'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forbidden'
+              example:
+                error: 'FORBIDDEN'
+                error_description: 'Authentication with an expired access token or bearer access token having insufficient privileges'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+
+  /.well-known/oauth-authorization-server:
+    get:
+      tags:
+        - Discovery
+      summary: Oauth2 Authorization Server and OpenID Connect configuration discovery
+      externalDocs:
+        description: '[OpenID.Discovery] OpenID Connect Discovery 1.0'
+        url: https://openid.net/specs/openid-connect-discovery-1_0.html
+      responses:
+        '200':
+          description: OIDCConfiguration
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OIDCConfiguration'
+
+  /.well-known/jwks:
+    get:
+      description: >-
+        This specific pathname is Mandatory, exact pathname has to be specified in `OIDCConfiguration.jwks_uri`.
+
+        This endpoint returns JSON Web Keys to be used as public keys for verifying OIDC ID Tokens, responses and encrypting requests.
+      tags:
+        - Discovery
+      summary: JSON Web Keys Discovery
+      externalDocs:
+        description: '[RFC7517] JSON Web Key (JWK)'
+        url: https://tools.ietf.org/html/rfc7517
+      responses:
+        '200':
+          description: JWKS
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWKS'
+  /csc/v2/oauth2/authorize:
+    get:
+      summary: CSCv2 auth request for driving application
+      externalDocs:
+        description: See CSCv2 specs
+        url: https://cloudsignatureconsortium.org/wp-content/uploads/2023/04/csc-api-v2.0.0.2.pdf
+      description: |
+        This GET endpoint is a starting point for OAuth2 and OpenID Connect authorization flows.Code grant and implicit grant is supported by Authorization. Is strictly recommended to 
+        use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+
+        **Technical scopes** (used in the `scope` query parameter):
+      tags:
+        - QES Authorization Request
+      parameters:
+        - $ref: '#/components/parameters/auth_redirect_uri'
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_response_type'
+        - $ref: '#/components/parameters/auth_nonce'
+        - $ref: '#/components/parameters/auth_state'
+        - $ref: '#/components/parameters/auth_scope'
+        - $ref: '#/components/parameters/auth_max_age'
+        - $ref: '#/components/parameters/auth_authorization_detail'
+
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+                Redirect the End-User to `redirect_uri` after giving consent in Wallet's consent screen
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+                  description: Redirect successful
+
+      responses:
+        '302':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client redirect_uri with an authorization code or access_token 
+            (in case of successful authentication) or an error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Location:
+              description: |
+                Redirect response to endpoint specified in redirect_uri with parameters:
+                `code` Authorization Code.
+                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
+              schema:
+                type: string
+                format: uri
+              example: |
+                HTTP/1.1 302 Found
+                Location: https://service.example.cz/callback?
+                    code=123456
+                    &state=jdpi9hu1HH
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+    post:
+      summary: CSCv2 auth request for driving application
+      externalDocs:
+        description: See CSCv2 specs
+        url: https://cloudsignatureconsortium.org/wp-content/uploads/2023/04/csc-api-v2.0.0.2.pdf
+      description: >-
+        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
+        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+      tags:
+        - QES Authorization Request
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequestReq'
+
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+
+                Redirect the End-User to `redirect_uri` after giving consent in bank's "HTML showing consent screen"
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+      responses:
+        '200':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client 
+            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
+            error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationRequestResponse'
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+  /csc/v2/oauth2/token:
+    post:
+      summary: Acquire a new set of tokens
+      externalDocs:
+        description: 'The OAuth 2.0 Authorization Framework'
+        url: https://tools.ietf.org/html/rfc6749
+      description: Token requuest for token to use CSC 2.0 API
+      tags:
+        - CSC Token management
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
+              description: |-
+                In case of issuing access token from authorization code:
+                 - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
+
+
+                PKCE and refreshing access token is not supported for now
+              example:
+                grant_type: authorization_code
+                code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+                redirect_uri: 'https://rp.example.com/callback'
+      responses:
+        '200':
+          description: 'Request for token was successful'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - 'no-store'
+            Pragma:
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenCSCResponse'
+        '400':
+          $ref: '#/components/responses/TokenErrorResponse'
+        '401':
+          $ref: '#/components/responses/TokenErrorResponseBadCredentials'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+  /csc/v2/signatures/signHash:
+    post:
+      summary: CSCv2 auth request for driving application
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      description: >-
+        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
+        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+      tags:
+        - QES Sign Hash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignHashRequest'
+      responses:
+        '200':
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          description: Returs signed hashes in order which were sent on input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignHashRequest'
+        '400':
+          $ref: '#/components/schemas/RequestInvalidError'
+  /issuer/credentialOffer:
+    summary: Link to Credential offer
+    get:
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      tags:
+        - Credential Issuance
+      responses:
+        '200':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client 
+            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
+            error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialOfferResponse'
+
+  /issuer/.well-known/openid-credential-metadata:
+    summary: Metadata for Credential issuance
+    get:
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      tags:
+        - Credential Issuance
+      responses:
+        '200':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client 
+            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
+            error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialMetadataResponse'
+
+  /issuer/oauth2/authorize:
+    get:
+      summary: Begin the Bank iD authentication flow
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      description: |
+        This GET endpoint is a starting point for OAuth2 and OpenID Connect authorization flows.Code grant and implicit grant is supported by Authorization. Is strictly recommended to 
+        use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+
+        **Technical scopes** (used in the `scope` query parameter):
+        - openid (always required scope)  
+        - offline_access (the scope must be specified if a refresh_token release is required)
+
+      tags:
+        - Credential Issuance
+      parameters:
+        - $ref: '#/components/parameters/auth_redirect_uri'
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_response_type'
+        - $ref: '#/components/parameters/auth_nonce'
+        - $ref: '#/components/parameters/auth_state'
+        - $ref: '#/components/parameters/auth_scope'
+
+
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+                Redirect the End-User to `redirect_uri` after giving consent in Wallet's consent screen
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+                  description: Redirect successful
+
+      responses:
+        '302':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client redirect_uri with an authorization code or access_token 
+            (in case of successful authentication) or an error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Location:
+              description: |
+                Redirect response to endpoint specified in redirect_uri with parameters:
+                `code` Authorization Code.
+                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
+              schema:
+                type: string
+                format: uri
+              example: |
+                HTTP/1.1 302 Found
+                Location: https://service.example.cz/callback?
+                    code=123456
+                    &state=jdpi9hu1HH
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+
+    post:
+      summary: Begin the Bank iD authentication flow
+      externalDocs:
+        description: 'Bank iD OpenId Connect Authentication request'
+        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
+      description: >-
+        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
+        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
+        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
+
+        This request authenticates the user and returns tokens to the client application as a part of the callback response.
+      tags:
+        - Credential Issuance
+      requestBody: 
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequestReq'
+      callbacks:
+        Login-Flow-Success:
+          '{$request.query.redirect_uri}':
+            get:
+              description: |-
+                In case of `response_type=code`.
+
+                Redirect the End-User to `redirect_uri` after giving consent in bank's "HTML showing consent screen"
+              parameters:
+                - $ref: '#/components/parameters/auth_code'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+        Error:
+          '{$request.query.redirect_uri}':
+            get:
+              description: >-
+                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
+                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
+                "application/x-www-form-urlencoded" format
+              parameters:
+                - $ref: '#/components/parameters/auth_error'
+                - $ref: '#/components/parameters/auth_error_description'
+                - $ref: '#/components/parameters/auth_error_uri'
+                - $ref: '#/components/parameters/auth_state'
+              responses:
+                '200':
+                  description: Redirect successful
+                  headers:
+                    traceId:
+                      description: Unique ID for each API call for support purposes.
+                      schema:
+                        $ref: '#/components/schemas/traceId'
+
+      responses:
+        '200':
+          description: |
+            Authentication Response. As a response to authentication flow, the IDP will then call the client 
+            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
+            error response code (if access denied, or when some other error occurred).
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationRequestResponse'
+        '400':
+          $ref: '#/components/responses/RequestInvalidError'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+
+  /issuer/oauth2/token:
+    post:
+      summary: Acquire a new set of tokens
+      externalDocs:
+        description: 'The OAuth 2.0 Authorization Framework'
+        url: https://tools.ietf.org/html/rfc6749
+      description: Token requuest for token to use CSC 2.0 API
+      tags:
+        - Credential Issuance
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
+              description: |-
+                In case of issuing access token from authorization code:
+                 - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
+
+
+                PKCE and refreshing access token is not supported for now
+              example:
+                grant_type: authorization_code
+                code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+                redirect_uri: 'https://rp.example.com/callback'
+      responses:
+        '200':
+          description: 'Request for token was successful'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - 'no-store'
+            Pragma:
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenCSCResponse'
+        '400':
+          $ref: '#/components/responses/TokenErrorResponse'
+        '401':
+          $ref: '#/components/responses/TokenErrorResponseBadCredentials'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+  /issuer/credentials:
+    post:
+      summary: Acquire a new set of tokens
+      externalDocs:
+        description: 'The OAuth 2.0 Authorization Framework'
+        url: https://tools.ietf.org/html/rfc6749
+      description: Token requuest for token to use CSC 2.0 API
+      tags:
+        - Credential Issuance
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
+              description: |-
+                In case of issuing access token from authorization code:
+                 - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
+
+                PKCE and refreshing access token is not supported for now
+              example:
+                grant_type: authorization_code
+                code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+                redirect_uri: 'https://rp.example.com/callback'
+      responses:
+        '200':
+          description: 'Request for token was successful'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            Cache-Control:
+              schema:
+                type: string
+                enum:
+                  - 'no-store'
+            Pragma:
+              schema:
+                type: string
+                enum:
+                  - no-cache
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenCSCResponse'
+        '400':
+          $ref: '#/components/responses/TokenErrorResponse'
+        '401':
+          $ref: '#/components/responses/TokenErrorResponseBadCredentials'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+
+components:
+  headers:
+    location:
+      schema:
+        type: string
+      description: >
+        Location of redirect returned in HTTP 302 response for end user.
+      example: www.bankd.cz/callback?sid=123456&state=abcdef
+
+  parameters:
+    txn:
+      in: query
+      name: txn
+      description: The txn Claim as defined in [RFC8417] is used in the context of this extension to build audit trails across the parties involved in an OpenID Connect transaction.
+      example: 5fo70547-0f7f-4794-acb0-d959f5a899a6
+      schema:
+        type: string
+    document_id:
+      name: document_id
+      in: query
+      required: false
+      description: >-
+        Id of document included in custom PDF metadata. This attribute must be included in PDF metadata under ```documentId``` key.
+      schema:
+        type: string
+        example: '7159534b-3b88-4f29-866b-9e83489d3053'
+    file_token:
+      name: file_token
+      in: path
+      required: true
+      description: >-
+        Unique ID for distinguishing different file paths for different processes. It is returend by Bank iD in upload_uri
+      schema:
+        type: string
+        example: '7159534b-3b88-4f29-866b-9e83489d3053'
+    redirect_uri:
+      name: redirect_uri
+      in: query
+      description: URL for end-user redirect to authorization server
+      schema:
+        type: string
+        example: https://client.example.org/request.jwt#GkurKxf5T0Y-mnPFCHqWOMiZi4VS138cQO_V7PZHAdM
+    auth_scope:
+      in: query
+      required: true
+      name: scope
+      description: OpenID Connect requests MUST contain the openid scope value. If the openid scope value is not present, the behavior is entirely unspecified. Other scope values MAY be present. Scope values used that are not understood by an implementation SHOULD be ignored. See Sections 5.4 and 11 for additional scope values defined by this specification.
+      schema:
+        type: string
+        example: 'openid profile.name profile.addresses'
+    auth_response_type:
+      name: response_type
+      in: query
+      required: true
+      description: >-
+        OAuth 2.0 Response Type value that determines the authorization processing flow to be used,
+        including what parameters are returned from the endpoints used. For [Authorization Code Flow](https://tools.ietf.org/html/rfc6749#section-1.3.1) use `code`.
+        Implicit flow is not supported, use PKCE instead.
+      schema:
+        type: array
+        maxItems: 1
+        items:
+          type: string
+          enum:
+            - code
+    auth_client_id:
+      name: client_id
+      in: query
+      required: true
+      description: OAuth 2.0 Client Identifier valid at the Authorization Server.
+      schema:
+        type: string
+        example: 'D40D25DB-C330-4331-A191-0A4F6CCD17D8'
+    auth_redirect_uri:
+      name: redirect_uri
+      required: true
+      in: query
+      description: >-
+        Redirection URI to which the response will be sent. This URI MUST exactly match one of the Redirection URI values for the Client pre-registered
+        at the OpenID Provider, with the matching performed as described in Section 6.2.1 of [RFC3986] (Simple String Comparison). When using this flow, the Redirection URI MUST use the https 
+        scheme; however, it MAY use the http scheme for sandbox, provided that the Client Type is confidential, as defined in Section 2.1 of OAuth 2.0, and provided the OP allows the use of http Redirection 
+        URIs in this case. The Redirection URI MAY use an alternate scheme, such as one that is intended to identify a callback into a native application.
+      schema:
+        type: string
+        format: uri
+        example: 'https://rp.example.com/callback'
+    auth_state:
+      name: state
+      required: true
+      in: query
+      description: >-
+        Opaque value used to maintain state between the request and the callback. Typically, Cross-Site Request Forgery (CSRF, XSRF) mitigation is done by cryptographically 
+        binding the value of this parameter with a browser cookie.
+      schema:
+        type: string
+        example: 'security_token%3DXlwuwppIWL9F32SZDULd%26url%3Dhttps%3A%2F%2Frp.example.com%2Estate&'
+    auth_session_state:
+      name: session_state
+      in: query
+      required: true
+      description: Session State. JSON [RFC7159] string that represents the End-User's login state at the OP. It MUST NOT contain the space (" ") character. This value is opaque to the RP.
+      schema:
+        type: string
+        example: 3cf56e5d-40b0-45b5-a329-8c27741947b4
+    auth_authorization_detail:
+      name: authorization_detail
+      in: query
+      required: false
+      description: Authorization detail object according to Rich Authorization Request RFC and CSC v2 API
+    end_session_post_logout_redirect_uri:
+      name: post_logout_redirect_uri
+      in: query
+      description: URL to which the RP is requesting that the End-User's User Agent be redirected after a logout has been performed. The value MUST have been previously registered with the OP.
+      schema:
+        type: string
+        format: uri
+      example: https://rp.example.org/logout
+    auth_code:
+      name: code
+      in: query
+      description: >-
+        The authorization code generated by the authorization server.  The authorization code MUST expire
+        shortly after it is issued to mitigate the risk of leaks.  A maximum authorization code lifetime of 10 minutes is
+        RECOMMENDED.  The client MUST NOT use the authorization code more than once.  If an authorization code is used more than
+        once, the authorization server MUST deny the request and SHOULD revoke (when possible) all tokens previously issued based on
+        that authorization code.  The authorization code is bound to the client identifier and redirection URI.
+      schema:
+        type: string
+        example: '43F8E043-6AD8-4154-AC48-019AE65D9F7C'
+    auth_id_token:
+      name: id_token
+      in: query
+      required: true
+      description: >-
+        ID Token in format [IDToken]('#/components/schemas/IDToken')
+      schema:
+        type: string
+        example: 'MIICUDCCAbmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJjejEOMAwGA1UECAwFUHJhaGExEDAOBgNVBAoMB0V4YW1wbGUxFDASBgNVBAMMC2V4YW1wbGUuY29tMB4XDTIwMDExNjE2NDExOFoXDTIxMDExNTE2NDExOFowRTELMAkGA1UEBhMCY3oxDjAMBgNVBAgMBVByYWhhMRAwDgYDVQQKDAdFeGFtcGxlMRQwEgYDVQQDDAtleGFtcGxlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArOEYBRyBhcd6u3phrbU2xvTaBoy6W14CpqqfsBrfsUsuSB+JELBCj3a+zRIvy4EY9cnQbF7cPNxbXdCbGEokAUjIIuVBk/I6XhKRe01vlax82o+eFfIhUfl7Xb2Bx9U3m98Qbt3WNrv+VYJjjFP8HWSsWCHKCazj+yvozjuFXUsCAwEAAaNQME4wHQYDVR0OBBYEFN5SUrsStd4aLhBs+MWGRDxLeUP4MB8GA1UdIwQYMBaAFN5SUrsStd4aLhBs+MWGRDxLeUP4MAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADgYEAL59fE6itiRrck6Z7RCjwnOnebQJxpoB/L7TUC/aUIXss40mCviBVKD+Hl4+3sGyp4J2LlzzqhFcPgR9NyxQt0bkahJGH0UXvZETJe719UA0kGFrPMdt6ujwB6/rafT6TinzXN0lEEGikersTrh3BR9Hjw+v7nCQ0D5RfuDn6s5s='
+    auth_expires_in:
+      name: expires_in
+      in: query
+      required: true
+      description: >-
+        The lifetime in seconds of the access token.  For example, the value "3600" denotes that the access token will expire in one hour from the time the response was generated.
+      schema:
+        type: number
+        example: 3600
+    auth_response_mode:
+      name: response_mode
+      in: query
+      description: >-
+        Informs the Authorization Server of the mechanism to be used for returning parameters from the Authorization Endpoint. This use of this parameter is NOT RECOMMENDED when the Response 
+        Mode that would be requested is the default mode specified for the Response Type.
+      schema:
+        type: string
+        enum:
+          - query
+        example: 'query'
+    auth_nonce:
+      name: nonce
+      required: true
+      in: query
+      description: >-
+        String value used to associate a Client session with an ID Token, and to mitigate replay attacks. 
+        The value is passed through unmodified from the Authentication Request to the ID Token. 
+        Sufficient entropy MUST be present in the nonce values used to prevent attackers from guessing values. For implementation notes, see Section 15.5.2.
+      schema:
+        type: string
+        example: 'nxrt-084-222_wdutKuOasdj'
+
+    auth_max_age:
+      name: max_age
+      required: false
+      in: query
+      description: >-
+        Maximum possible Authentication Age. Specifies the allowable elapsed time in seconds since the last time the OP 
+        actively authenticated the End-User.
+
+        This parameter is not intended to request the length of validity of issued tokens. Currently, some IDPs do not 
+        support this parameter, and the current authentication validity period is limited only by the validity of the tokens.
+
+        The validity of Bank iD tokens is listed here 
+        [Tokens used in the Bank iD solution](https://developer.bankid.cz/docs/apis_sep#tokens-used-in-the-bankid-solution)
+      schema:
+        type: integer
+        format: int64
+        example: '6000'
+    auth_ui_locales:
+      name: ui_locales
+      in: query
+      description: >-
+        End-User's preferred languages and scripts for the user interface, represented as a space-separated list of BCP47 [RFC5646] language tag values, ordered by preference. 
+        For instance, the value "fr-CA fr en" represents a preference for French as spoken in Canada, then French (without a region designation), followed by English 
+        (without a region designation). An error SHOULD NOT result if some or all of the requested locales are not supported by the OpenID Provider.
+      schema:
+        type: string
+        example: 'fr-CA.UTF-8'
+    auth_id_token_hint:
+      name: id_token_hint
+      in: query
+      required: false
+      description: >-
+        ID Token previously issued by the Authorization Server being passed as a hint about the End-User's current or past authenticated session with the Client. If the End-User 
+        identified by the ID Token is logged in or is logged in by the request, then the Authorization Server returns a positive response; otherwise, it SHOULD return an error, 
+        such as login_required. When possible, an id_token_hint SHOULD be present when prompt=none is used and an invalid_request error MAY be returned if it is not; 
+        however, the server SHOULD respond successfully when possible, even if it is not present. The Authorization Server need not be listed as an audience of the ID Token when 
+        it is used as an id_token_hint value.
+      schema:
+        type: string
+        example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdlOGFkZmMzMjU1OTEyNzI0ZDY4NWZmYmIwOThjNDEyIiwidHlwIjoiSldUIn0.eyJuYmYiOjE0OTE3NjUzMjEsImV4cCI6MTQ5MTc2'
+    logout_id_token_hint:
+      name: id_token_hint
+      in: query
+      required: true
+      description: >-
+        ID Token previously issued by the Authorization Server being passed as a hint about the End-User's current or past authenticated session with the Client. If the End-User 
+        identified by the ID Token is logged in or is logged in by the request, then the Authorization Server returns a positive response; otherwise, it SHOULD return an error, 
+        such as login_required. When possible, an id_token_hint SHOULD be present when prompt=none is used and an invalid_request error MAY be returned if it is not; 
+        however, the server SHOULD respond successfully when possible, even if it is not present. The Authorization Server need not be listed as an audience of the ID Token when 
+        it is used as an id_token_hint value.
+      schema:
+        type: string
+        example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjdlOGFkZmMzMjU1OTEyNzI0ZDY4NWZmYmIwOThjNDEyIiwidHlwIjoiSldUIn0.eyJuYmYiOjE0OTE3NjUzMjEsImV4cCI6MTQ5MTc2'
+    auth_acr_values:
+      name: acr_values
+      in: query
+      description: >-
+        The parameter represents the required authentication level. The application should only request values configured in the developer portal (**Enable 2FA by default** switch in configuration)
+
+        The values determine the level of authentication as well as the possible use of authentication factors.
+        The value of ```loa4``` corresponds to authentication
+        using two independent verification factors (2FA or also SCA) in Wallet with assurance level on par with assurance level high
+      schema:
+        type: string
+        default: loa4
+        enum:
+          - loa4
+        example: 'loa4'
+    auth_error:
+      name: error
+      in: query
+      description: >-
+        - invalid_request -
+              The request is missing a required parameter, includes an invalid parameter value, includes a parameter more than
+              once, or is otherwise malformed.
+
+        - unauthorized_client -
+              The client is not authorized to request an authorization code using this method.
+
+        - access_denied -
+              The resource owner or authorization server denied the request.
+
+        - unsupported_response_type -
+              The authorization server does not support obtaining an authorization code using this method.
+
+        - invalid_scope -
+              The requested scope is invalid, unknown, or malformed.
+
+        - server_error -
+              The authorization server encountered an unexpected condition that prevented it from fulfilling the request.
+              (This error code is needed because a 500 Internal Server Error HTTP status code cannot be returned to the client
+              via an HTTP redirect.)
+
+        - temporarily_unavailable -
+              The authorization server is currently unable to handle the request due to a temporary overloading, maintenance
+              of the server or planned downtime of Basic Registers.  (This error code is needed because a 503 Service Unavailable HTTP status code cannot be returned
+              to the client via an HTTP redirect.)
+
+        - interaction_required -
+              The Authorization Server requires End-User interaction of some form to proceed. This error MAY be returned when the prompt
+              parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a
+              user interface for End-User interaction.
+
+        - login_required -
+              The Authorization Server requires End-User authentication. This error MAY be returned when the prompt parameter value in 
+              the Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface for End-User 
+              authentication.
+
+        - account_selection_required -
+              The End-User is REQUIRED to select a session at the Authorization Server. The End-User MAY be authenticated at the Authorization 
+              Server with different associated accounts, but the End-User did not select a session. This error MAY be returned when the prompt 
+              parameter value in the Authentication Request is none, but the Authentication Request cannot be completed without displaying a 
+              user interface to prompt for a session to use.
+
+        - consent_required -
+              The Authorization Server requires End-User consent. This error MAY be returned when the prompt parameter value in the 
+              Authentication Request is none, but the Authentication Request cannot be completed without displaying a user interface for 
+              End-User consent.
+
+        - invalid_request_uri -
+              The request_uri in the Authorization Request returns an error or contains invalid data.
+
+        - invalid_request_object -
+              The request parameter contains an invalid Request Object.
+
+        - request_not_supported -
+              The OP does not support use of the request parameter defined in Section 6.
+
+        - request_uri_not_supported -
+              The OP does not support use of the request_uri parameter defined in Section 6.
+
+        - registration_not_supported -
+              The OP does not support use of the registration parameter defined in Section 7.2.1.
+        - eid_doesnt_exist
+              The end-user cannot proceed with authentication since they don't have valid eID service. 
+        - sign_error
+              The signing of the document(s) encountered an error or document(s) contains invalid data or code was already used.
+        - user_not_eligible
+              Service cannot be provided due to age restriction, legal capacity or authentication method used by the user doesn't meet security level required by IdP.
+        - auth_failed
+              Code was already used in Authentication flow.
+        - insufficient_scope
+              SIGN service cannot be provided due to various required scopes missing in data from IdP.
+        -  basic_registers_unavaiable
+              QSIGN service cannot be provided during maintenance of Basic Registers.
+    polling_session_id:
+      name: session_id
+      required: true
+      in: query
+      description: >-
+        String value used to associate a user agent session with authorization request. 
+        Internally same id is used as state for request to Wallet.
+      example: 'nxrt-084-222_wdutKuOasdj'
+
+      schema:
+        externalDocs:
+          description: '[RFC6749] - The OAuth 2.0 Authorization Framework - Authentication Error Codes 4.1.2.1'
+          url: https://tools.ietf.org/html/rfc6749#section-4.1.2.1
+        type: string
+        enum:
+          - invalid_request
+          - unauthorized_client
+          - access_denied
+          - unsupported_response_type
+          - invalid_scope
+          - server_error
+          - temporarily_unavailable
+          - interaction_required
+          - login_required
+          - account_selection_required
+          - consent_required
+          - invalid_request_uri
+          - invalid_request_object
+          - request_not_supported
+          - request_uri_not_supported
+          - registration_not_supported
+          - eid_doesnt_exist
+          - sign_error
+          - user_not_eligible
+          - auth_failed
+          - insufficient_scope
+          - basic_registers_unavaiable
+        example: invalid_request
+    auth_error_description:
+      name: error_description
+      in: query
+      description: >-
+        Human-readable ASCII [USASCII] text providing additional information, used to assist the client developer in understanding the error that occurred.
+        Values for the "error_description" parameter MUST NOT include characters outside the set %x20-21 / %x23-5B / %x5D-7E.
+      schema:
+        type: string
+        example: General server error
+    auth_error_uri:
+      name: error_uri
+      in: query
+      description: >-
+        URI identifying a human-readable web page with information about the error, used to provide the client
+        developer with additional information about the error. Values for the "error_uri" parameter MUST conform to the
+        URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
+      schema:
+        type: string
+        format: uri
+        example: https://idp.example.com/error123
+    request_uri:
+      name: request_uri
+      in: query
+      description: >-
+        This parameter enables OpenID Connect requests to be passed by reference, rather than by value.
+        The `request_uri` value is a URL using the https scheme referencing a resource containing a Request Object value, which is a JWT containing the request parameters.
+      schema:
+        type: string
+        format: uri
+        example: 'https://rp.example.com/request/13CACDFD-884C-4E57-B78D-90B69A96C86A.jwt'
+    auth_claims:
+      name: claims
+      in: query
+      deprecated: true
+      required: false
+      description: >
+        List of requested Claims from userinfo EP or id_token. Standard Claims defined in [OpenID Core - Claims](https://openid.net/specs/openid-connect-core-1_0.html#Claims)
+      schema:
+        type: object
+        properties:
+          userinfo:
+            $ref: '#/components/schemas/request_claims_param'
+          id_token:
+            $ref: '#/components/schemas/request_claims_param'
+    auth_bank_id:
+      name: bank_id
+      in: query
+      description: >-
+        Bank ID acquired from the Bank Listing API. This is used to skip the bank selection screen and redirect the end-user straight to the Bank.
+      schema:
+        type: string
+        example: 1441860F-61D9-4A40-B634-EF741ADCB0A7
+    banks_client_id:
+      name: client_id
+      in: query
+      required: false
+      description: OAuth 2.0 Client Identifier valid at the Authorization Server.
+      schema:
+        type: string
+        example: D40D25DB-C330-4331-A191-0A4F6CCD17D8
+    callback_vp_token:
+      name: vp_token
+      in: query
+      required: false
+      description: |
+        SON String or JSON object that MUST contain a single Verifiable Presentation or an array of JSON Strings and JSON objects 
+        each of them containing a Verifiable Presentations. 
+        Each Verifiable Presentation MUST be represented as a JSON string (that is a Base64url encoded value) 
+        or a JSON object depending on a format as defined in Annex E of [OpenID.VCI]. 
+        When a single Verifiable Presentation is returned, the array syntax MUST NOT be used. 
+        If Appendix E of [OpenID.VCI] defines a rule for encoding the respective Credential format in the Credential Response, 
+        this rules MUST also be followed when encoding Credentials of this format in the vp_token response parameter. 
+        Otherwise, this specification does not require any additional encoding 
+        when a Credential format is already represented as a JSON object or a JSON string.
+    callback_presentation_submission:
+      name: presentation_submission
+      in: query
+      required: false
+      description: |
+        The presentation_submission element as defined in [DIF.PresentationExchange]. 
+        It contains mappings between the requested Verifiable Credentials and where to find them within the returned VP Token. 
+        This is expressed via elements in the descriptor_map array, known as Input Descriptor Mapping Objects. 
+        These objects contain a field called path, which, for this specification, 
+        MUST have the value $ (top level root path) when only one Verifiable Presentation is contained in the VP Token, 
+        and MUST have the value $[n] (indexed path from root) when there are multiple Verifiable Presentations, 
+        where n is the index to select. 
+        The path_nested object inside an Input Descriptor Mapping Object is used to describe how to find 
+        a returned Credential within a Verifiable Presentation, and the value of the path field in it will ultimately depend 
+        on the credential format.
+    callback_id_token:
+      name: id_token
+      in: query
+      required: false
+  requestBodies:
+    RevocationRequest:
+      required: true
+      content:
+        application/jwt:
+          schema:
+            type: object
+            required:
+              - token
+            properties:
+              token:
+                description: The token that the client wants to get revoked.
+                type: string
+              token_type_hint:
+                description: >-
+                  A hint about the type of the token submitted for revocation.  Clients MAY pass this parameter in order to help the authorization server to optimize the token
+                  lookup.  If the server is unable to locate the token using the given hint, it MUST extend its search across all of its supported token types.  An authorization server MAY ignore
+                  this parameter, particularly if it is able to detect the token type automatically.
+                type: string
+                enum:
+                  - access_token
+                  - refresh_token
+
+  schemas:
+    AccessTokenResponse:
+      description:
+        The authorization server issues an access token and optional refresh token, and constructs the response by adding the following parameters
+        to the entity-body of the HTTP response with a 200 (OK) status code.
+      externalDocs:
+        description: '[RFC6749] - The OAuth 2.0 Authorization Framework: - 5.1.  Successful Response'
+        url: https://tools.ietf.org/html/rfc6749#section-5.1
+      required:
+        - access_token
+        - token_type
+        - refresh_token
+        - expires_in
+        - id_token
+      properties:
+        access_token:
+          description: 'Tz  e access token issued by the authorization server.'
+          type: string
+          example: 'c03e9z  7c-aa96-4b3f-ad0c-98626833145d'
+        token_type:
+          description: 'Tz  e type of the token issued. Value is case insensitive.'
+          type: string
+          enum:
+            - Bearer
+          example: 'Bearez  '
+        refresh_token:
+          description: 'Tz  e refresh token, which can be used to obtain new access tokens using the same authorization grant.'
+          type: string
+          example: '1f703z  5f-75da-4b58-a1b0-e315700e4227'
+        expires_in:
+          description: 'Tz  e lifetime in seconds of the access token.  For example, the value "3600" denotes that the access token will expire in one hour from the time the response was generated.'
+          type: integer
+          format: int64
+          example: 6000
+        scope:
+          description: 'If scope are not identical as requested by client.'
+          type: string
+          example: 'openid offline_access profile.addresses'
+        id_token:
+          description: 'ID Token value associated with the authenticated session. It is strongly suggested to not limit the size of token.'
+          type: string
+          format: JWT
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+    AccessTokenCSCResponse:
+      description:
+        The authorization server issues an access token and optional refresh token, and constructs the response by adding the following parameters
+        to the entity-body of the HTTP response with a 200 (OK) status code.
+      externalDocs:
+        description: '[RFC6749] - The OAuth 2.0 Authorization Framework: - 5.1.  Successful Response'
+        url: https://tools.ietf.org/html/rfc6749#section-5.1
+      required:
+        - access_token
+        - token_type
+        - refresh_token
+        - expires_in
+        - id_token
+        - authorization_detail
+      properties:
+        access_token:
+          description: 'Tz  e access token issued by the authorization server.'
+          type: string
+          example: 'c03e9z  7c-aa96-4b3f-ad0c-98626833145d'
+        token_type:
+          description: 'Tz  e type of the token issued. Value is case insensitive.'
+          type: string
+          enum:
+            - Bearer
+          example: 'Bearer'
+        expires_in:
+          description: 'Tz  e lifetime in seconds of the access token.  For example, the value "3600" denotes that the access token will expire in one hour from the time the response was generated.'
+          type: integer
+          format: int64
+          example: 6000
+        scope:
+          description: 'If scope are not identical as requested by client.'
+          type: string
+          example: 'openid offline_access profile.addresses'
+        authorization_detail:
+          type: object
+          description: authorization_detail from  auth request
+    AuthorizationRequestReq:
+      properties:
+        client_id:
+          $ref: '#/components/parameters/auth_client_id'
+        response_type:
+          $ref: '#/components/parameters/auth_response_type'
+        nonce:
+          $ref: '#/components/parameters/auth_nonce'
+        state:
+          $ref: '#/components/parameters/auth_state'
+        scope:
+          $ref: '#/components/parameters/auth_scope'
+        max_age:
+          $ref: '#/components/parameters/auth_max_age'
+        authorization_detail:
+          $ref: '#/components/parameters/auth_authorization_detail'
+
+    AuthorizationRequestResponse:
+      properties:
+        request_url:
+          description: 'URL for authorization request for SIPOv2 and OIDC4VC in Wallet'
+          type: string
+          example: 'https://wallet.bankid.cz/request.jwt'
+        polling_session_id:
+          description: Id for polling of authorization status
+          type: string
+          example: jbounipvnn
+    CredentialOfferResponse:
+      properties:
+        credential_issuer:
+          description: 'URL for Credential Issuer to Wallet'
+          type: string
+          example: 'https://wallet.stage.bankid.cz/request.jwt'
+        credential_configuration_ids:
+          description: vct, namespaces or scopes
+          type: array
+          example: [ IBAN, 'eu.europa.eudi.IBAN' ]
+        grants:
+          type: object
+          properties:
+            authorization_code:
+              type: object
+              properties:
+                authorization_server:
+                  type: string
+            'urn:ietf:params:oauth:grant-type:pre-authorized_code':
+              type: object
+              properties:
+                pre-authorized_code:
+                  type: string
+                authorization_server:
+                  type: string
+    CredentialMetadataResponse:
+      $ref: '#/definitions/CredentialMetadataObject'
+    
+    
+    Display:
+      properties:
+        name:
+          type: string
+        locale:
+          type: string
+        logo:
+          type: object
+          properties:
+            uri:
+              type: string
+            alt_text:
+              type: string
+    
+    PollingResponse:
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - IN_PROGRESS
+            - DONE
+        state:
+          type: string
+          description: State from request
+    name:
+      type: string
+      description: End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
+      example: Jan Novák
+
+    title_prefix:
+      type: string
+      description: User's title prefix
+      example: Ing.
+
+    title_suffix:
+      type: string
+      description: User`s title suffix
+      example: Jr.
+
+    given_name:
+      type: string
+      description:
+        Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can
+        be present, with the names being separated by space characters.
+      example: Jan
+
+    family_name:
+      type: string
+      description:
+        Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple family names or no family
+        name; all can be present, with the names being separated by space characters.
+      example: Novák
+
+    middle_name:
+      type: string
+      description:
+        Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; all can be present,
+        with the names being separated by space characters. Also note that in some cultures, middle names are not used.
+
+    nickname:
+      type: string
+      description:
+        Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickname value of Mike might
+        be returned alongside a given_name value of Michael.
+      example: Fantomas
+
+    preferred_username:
+      type: string
+      description:
+        Shorthand name by which the End-User wishes to be referred to at the RP, such as janedoe or j.doe. This value MAY be any
+        valid JSON string including special characters such as @, /, or whitespace. The API consumer MUST NOT rely upon this value being unique.
+      example: JanN
+
+    email:
+      type: string
+      description:
+        End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. The API consumer MUST
+        NOT rely upon this value being unique.
+      example: j.novak@email.com
+
+    email_verified:
+      type: boolean
+      description:
+        True if the End-User's e-mail address has been verified; otherwise false. When this Claim Value is true, this means
+        that the OP took affirmative steps to ensure that this e-mail address was controlled by the End-User at the time the
+        verification was performed. The means by which an e-mail address is verified is context-specific, and dependent upon
+        the trust framework or contractual agreements within which the parties are operating.
+
+    gender:
+      type: string
+      description:
+        End-User's gender. Values defined by this specification are female and male. Other values MAY be used when neither of the
+        defined values are applicable.
+      enum:
+        - male
+        - female
+        - other
+
+    birthdate:
+      type: string
+      description:
+        End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format. The year MAY be 0000,
+        indicating that it is omitted. To represent only the year, YYYY format is allowed. Note that depending on the underlying
+        platform's date related function, providing just year can result in varying month and day, so the implementers need to
+        take this factor into account to correctly process the dates.
+      format: date
+      example: 1970-08-01
+
+    birthnumber:
+      type: string
+      description: User's birth number. Birth number is required if nationality is Czech ("CZ") and MUST be without forward slash.
+      example: '1101700140'
+
+    birthplace:
+      type: string
+      description: User's birth place.
+      example: 'Praha 4'
+
+    birthcountry:
+      type: string
+      description: User's country of birth. Element in ISO 3166-1 format, subtype ALPHA-2. This means two letters in uppercase.
+      example: 'CZ'
+
+    primary_nationality:
+      type: string
+      deprecated: true
+      title: primary_nationality
+      description: Optional element user's primary nationality, ISO 3166-1 format, subtype ALPHA-2. This means two letters in uppercase.
+      example: 'CZ'
+
+    nationalities:
+      type: array
+      title: nationalities
+      description: All user's nationalities, ISO 3166-1 format, subtype ALPHA-2. This means two letters in uppercase.
+      items:
+        type: string
+      example: [ 'CZ', 'AT', 'SK' ]
+
+    maritalstatus:
+      type: string
+      description: >-
+        Marital status. One of:
+          * `COHABITATION` - cohabitation status.
+          * `MARRIED` - married status
+          * `DIVORCED` - divorced status
+          * `REGISTERED_PARTNERSHIP` - registered partnership status
+          * `REGISTERED_PARTNERSHIP_CANCELED` - registered partnership canceled status
+          * `WIDOWED` - widowed status
+          * `SINGLE` - single status
+          * `UNKNOWN` - unknown status
+      enum:
+        - COHABITATION
+        - MARRIED
+        - DIVORCED
+        - REGISTERED_PARTNERSHIP
+        - REGISTERED_PARTNERSHIP_CANCELED
+        - WIDOWED
+        - SINGLE
+        - UNKNOWN
+
+    addresses:
+      type: array
+      description: User’s addresses
+      items:
+        $ref: '#/components/schemas/address'
+
+    idcards:
+      type: array
+      title: idcards
+      description: User's id cards
+      items:
+        $ref: '#/components/schemas/idcard'
+
+    pep:
+      type: boolean
+      description:
+        Flag that the authenticated user is politically exposed person (PEP). In financial regulation, a politically exposed person is one who has been entrusted
+        with a prominent public function. A PEP generally presents a higher risk for potential involvement in bribery and corruption by virtue of their position
+        and the influence that they may hold.
+      example: false
+
+    limited_legal_capacity:
+      type: boolean
+      description: An indication of whether this is a person with limited legal capacity.
+      example: false
+
+    zoneinfo:
+      type: string
+      description: String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example,Europe/Paris or America/Los_Angeles.
+      example: Europe/Prague
+
+    locale:
+      type: string
+      description:
+        End-User's locale, represented as a BCP47 [RFC5646] language tag. This is typically an ISO 639-1 Alpha-2 [ISO639‑1]
+        language code in lowercase and an ISO 3166-1 Alpha-2 ISO3166‑1] country code in uppercase, separated by a dash.
+        For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator
+        rather than a dash, for example, en_US; Relying Parties MAY choose to accept this locale syntax as well.
+      example: cs_CZ
+
+    phone_number:
+      type: string
+      description:
+        End-User's preferred telephone number. E.164 [E.164] is RECOMMENDED as the format of this Claim, for example, +1(425)
+        555-1212 or +56(2) 687 2400. If the phone number contains an extension, it is RECOMMENDED that the extension be represented
+        using the RFC 3966 [RFC3966] extension syntax, for example, +1(604) 555-1234;ext=5678.
+      example: '+420123456789'
+
+    phone_number_verified:
+      type: boolean
+      description:
+        True if the End-User's phone number has been verified; otherwise false. When this Claim Value is true, this means
+        that the OP took affirmative steps to ensure that this phone number was controlled by the End-User at the time the
+        verification was performed. The means by which a phone number is verified is context-specific, and dependent upon the trust
+        framework or contractual agreements within which the parties are operating. When true, the phone_number Claim MUST be in
+        E.164 format and any extensions MUST be represented in [RFC3966] format.
+
+    age:
+      type: number
+      description: Current age of the client given in years.
+      example: 28
+
+    date_of_death:
+      type: string
+      description: 'Date of death of the client. Practically still null. Only in the case of updating data (not yet part of the standard definition) is it possible to receive a specific date.'
+      example: null
+
+    majority:
+      type: boolean
+      description: An person is over the threshold of adulthood as recognized or declared in law.
+      example: true
+
+    updated_at:
+      type: integer
+      description: Time the End-User's information was last updated. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
+      format: int64
+      example: 1650887066
+
+    traceId:
+      description: Unique ID for each API call for support purposes.
+      type: string
+      pattern: '^[a-zA-Z0-9]{16}$'
+      example: 26f6ea6095205ebc
+
+    claims_userinfo:
+      description: |
+        Object that is the container for the verified Claims about the End-User from Userinfo endpoint. Data in this element are checked against state basic registers.
+      type: object
+      anyOf:
+        - $ref: '#/components/schemas/title_prefix'
+        - $ref: '#/components/schemas/title_suffix'
+        - $ref: '#/components/schemas/given_name'
+        - $ref: '#/components/schemas/family_name'
+        - $ref: '#/components/schemas/middle_name'
+        - $ref: '#/components/schemas/gender'
+        - $ref: '#/components/schemas/birthdate'
+        - $ref: '#/components/schemas/birthnumber'
+        - $ref: '#/components/schemas/age'
+        - $ref: '#/components/schemas/majority'
+        - $ref: '#/components/schemas/date_of_death'
+        - $ref: '#/components/schemas/birthplace'
+        - $ref: '#/components/schemas/birthcountry'
+        - $ref: '#/components/schemas/primary_nationality'
+        - $ref: '#/components/schemas/nationalities'
+        - $ref: '#/components/schemas/maritalstatus'
+        - $ref: '#/components/schemas/addresses'
+        - $ref: '#/components/schemas/idcards'
+        - $ref: '#/components/schemas/email'
+        - $ref: '#/components/schemas/phone_number'
+        - $ref: '#/components/schemas/pep'
+        - $ref: '#/components/schemas/limited_legal_capacity'
+        - $ref: '#/components/schemas/paymentAccounts'
+        - $ref: '#/components/schemas/updated_at'
+      example:
+        name: 'Jan Novák'
+        given_name: Jan
+        family_name: Novák
+        gender: male
+        birthdate: '1970-08-01'
+        birthplace: 'Praha 4'
+
+    claims_profile:
+      description: |
+        Object that is the container for the verified Claims about the End-User from Profile endpoint. Data in this element are checked against state basic registers.
+      type: object
+      anyOf:
+        - $ref: '#/components/schemas/title_prefix'
+        - $ref: '#/components/schemas/title_suffix'
+        - $ref: '#/components/schemas/given_name'
+        - $ref: '#/components/schemas/family_name'
+        - $ref: '#/components/schemas/middle_name'
+        - $ref: '#/components/schemas/gender'
+        - $ref: '#/components/schemas/birthdate'
+        - $ref: '#/components/schemas/birthnumber'
+        - $ref: '#/components/schemas/age'
+        - $ref: '#/components/schemas/majority'
+        - $ref: '#/components/schemas/date_of_death'
+        - $ref: '#/components/schemas/birthplace'
+        - $ref: '#/components/schemas/birthcountry'
+        - $ref: '#/components/schemas/primary_nationality'
+        - $ref: '#/components/schemas/nationalities'
+        - $ref: '#/components/schemas/maritalstatus'
+        - $ref: '#/components/schemas/addresses'
+        - $ref: '#/components/schemas/idcards'
+        - $ref: '#/components/schemas/email'
+        - $ref: '#/components/schemas/phone_number'
+        - $ref: '#/components/schemas/pep'
+        - $ref: '#/components/schemas/limited_legal_capacity'
+        - $ref: '#/components/schemas/paymentAccounts'
+        - $ref: '#/components/schemas/updated_at'
+      example:
+        given_name: Jan
+        family_name: Novák
+        gender: male
+        birthdate: '1970-08-01'
+        birthplace: 'Praha 4'
+
+    verification:
+      description: "This element contains the information about the process conducted to verify a person's identity and bind the respective person data to a user account."
+      type: object
+      required:
+        - trust_framework
+        - verification_process
+      properties:
+        trust_framework:
+          type: string
+          title: trust_framework
+          enum:
+            - cz_aml
+          description: 'String determining the trust framework governing the identity verification process and the identity assurance level of the OP.'
+          example: 'cz_aml'
+        time:
+          type: string
+          format: 'date-time'
+          title: time
+          description: 'Time stamp in ISO 8601:2004 [ISO8601-2004] YYYY-MM-DDThh:mm:ss±hh format **with colon in date offset** (e.g. 2015-04-05T14:31:22+02:00) representing the date and time when identity verification took place. Presence of this element might be required for certain trust frameworks.'
+          example: '2015-04-05T14:31:22+02:00'
+        verification_process:
+          type: string
+          title: verification_process
+          description: |
+            Reference to the identity verification process as performed by the identity providers. Used for 
+            backtracing in case of disputes or audits. Presence of this element might be required for certain trust 
+            frameworks. In the case of Bank iD, the value of this element requires issuser of PID
+          example: '45244782'
+
+    address:
+      type: object
+      title: address
+      description: User's address
+      properties:
+        type:
+          type: string
+          title: type
+          description: |-
+            Type of address element as an ENUM:
+              * `PERMANENT_RESIDENCE` - permanent residence address
+              * `SECONDARY_RESIDENCE` - secondary residence address
+              * `UNKNOWN` - unknown address type
+          enum:
+            - PERMANENT_RESIDENCE
+            - SECONDARY_RESIDENCE
+            - UNKNOWN
+        street:
+          type: string
+          title: street
+          description: Street
+          example: 'Novodvorská'
+        buildingapartment:
+          type: string
+          title: buildingapartment
+          description: Address land registry number.
+          example: '13'
+        streetnumber:
+          type: string
+          title: streetnumber
+          description: Additional address house number.
+          example: '1491'
+        evidencenumber:
+          type: string
+          title: evidencenumber
+          description: Optional parameter. House registration number (eg for house constructions).
+          example: '11a'
+        city:
+          type: string
+          title: city
+          description: City name.
+          example: 'Plzeň'
+        cityarea:
+          type: string
+          title: cityarea
+          description: Optional parametr. City area name.
+          example: 'Pankrác'
+        zipcode:
+          type: string
+          title: zipcode
+          description: Zip code of the address.
+          example: '10200'
+        country:
+          type: string
+          title: country
+          description:
+            Country Code, ISO 3166-1 format, subtype ALPHA-2. This means two
+            letters in uppercase.
+          example: 'AT'
+        ruian_reference:
+          type: string
+          title: ruian_reference
+          description: Address reference to the register of territorial identification, addresses and real estate (RUIAN)
+          example: '144560291'
+      required:
+        - type
+        - city
+        - zipcode
+        - country
+
+    idcard:
+      type: object
+      title: idcard
+      description: User's identification document
+      properties:
+        type:
+          type: string
+          title: type
+          description: >-
+            Id card type code:
+              * `ID` - Identity card.
+              * `P`  - Passport
+              * `DL` - Driving license
+              * `IR` - Residence permit
+              * `VS` - Visa permit label
+              * `PS` - Residential label
+              * `IX` - Book with residence permit
+              * `IE` - Form with temporary residence
+              * `OP` - Identity card – without machine readable zone
+              * `CA` - Passport of the Czech Republic resident – without machine readable zone
+              * `UNKNOWN` - Unknown id card type
+          enum:
+            - ID
+            - P
+            - DL
+            - IR
+            - VS
+            - PS
+            - IX
+            - IE
+            - OP
+            - CA
+            - UNKNOWN
+        description:
+          type: string
+          title: description
+          description: Localized id card type description.
+          example: 'Občanský průkaz'
+        country:
+          type: string
+          title: country
+          description: Country for which is id card valid.
+          example: 'CZ'
+        number:
+          type: string
+          title: number
+          description: Number of id card.
+          example: '123456789'
+        valid_to:
+          type: string
+          title: valid_to
+          description: Id card validity.
+          example: '2020-01-28'
+        issuer:
+          type: string
+          title: issuer
+          description: Office that issued id card.
+          example: 'Úřad městské části Praha 4'
+        issue_date:
+          type: string
+          title: issue_date
+          description: Date of id card issue.
+          example: '2025-01-28'
+      required:
+        - type
+        - country
+        - number
+
+    paymentAccounts:
+      type: array
+      title: paymentAccounts
+      description: User's payment account numbers in CZ IBAN format.
+      items:
+        type: string
+        title: IBAN
+        description: User's payment account number in CZ IBAN format.
+
+    paymentAccountsDetails:
+      type: array
+      description: User's payment account number in CZ IBAN format and currency.
+      items:
+        type: object
+        properties:
+          iban:
+            type: string
+            title: iban
+            description: User's payment account number in CZ IBAN format.
+            example: 'CZ0708000000001019382023'
+          currency:
+            description: The currency of that payment account
+            type: string
+            title: currency
+            example: 'CZK'
+
+    RemoteAuthorizationError:
+      properties:
+        error:
+          description: >-
+            Possible error codes:
+              * `invalid_email` - Provided email is not valid, malformed or otherwise unusable
+              * `email_nonexistent` - Provided email doesn't exists, mail was returned by mail provider
+              * `invalid_msisdn` - Provided MSISDN is not valid, malformed or otherwise unusable
+              * `msdsid_nonexistent` - Provided MSISDN doesn't exists, SMS was returned by SMS provider
+              * `msdsid_noneu_country` - Provided MSISDN is from country outside of EU
+              * `email_non_delivered` - Email was returned back by email host.
+          type: string
+          enum:
+            - invalid_email
+            - email_nonexistent
+            - invalid_msisdn
+            - msdsid_nonexistent
+            - msdsid_noneu_country
+            - email_non_delivered
+          example: invalid_email
+
+    userInfo:
+      description: ''
+      properties:
+        sub:
+          type: string
+          description: Identifier for the End-User at the Issuer.
+          example: 23f1ac00-5d54-4169-a288-794ae2ead0c4
+        txn:
+          type: string
+          description: >-
+            The txn Claim as defined in [RFC8417] is used in the context of this extension to build audit trails across the parties involved in an
+            OpenID Connect transaction.
+          example: 31470547-0f7f-4794-acb0-d959f5a711a5
+        verified_claims:
+          $ref: '#/components/schemas/verified_claims'
+        title_prefix:
+          $ref: '#/components/schemas/title_prefix'
+        title_suffix:
+          $ref: '#/components/schemas/title_suffix'
+        given_name:
+          $ref: '#/components/schemas/given_name'
+        family_name:
+          $ref: '#/components/schemas/family_name'
+        middle_name:
+          $ref: '#/components/schemas/middle_name'
+        gender:
+          $ref: '#/components/schemas/gender'
+        birthdate:
+          $ref: '#/components/schemas/birthdate'
+        birthnumber:
+          $ref: '#/components/schemas/birthnumber'
+        age:
+          $ref: '#/components/schemas/age'
+        majority:
+          $ref: '#/components/schemas/majority'
+        date_of_death:
+          $ref: '#/components/schemas/date_of_death'
+        birthplace:
+          $ref: '#/components/schemas/birthplace'
+        birthcountry:
+          $ref: '#/components/schemas/birthcountry'
+        primary_nationality:
+          $ref: '#/components/schemas/primary_nationality'
+        nationalities:
+          $ref: '#/components/schemas/nationalities'
+        maritalstatus:
+          $ref: '#/components/schemas/maritalstatus'
+        addresses:
+          $ref: '#/components/schemas/addresses'
+        idcards:
+          $ref: '#/components/schemas/idcards'
+        email:
+          $ref: '#/components/schemas/email'
+        phone_number:
+          $ref: '#/components/schemas/phone_number'
+        pep:
+          $ref: '#/components/schemas/pep'
+        limited_legal_capacity:
+          $ref: '#/components/schemas/limited_legal_capacity'
+        paymentAccounts:
+          $ref: '#/components/schemas/paymentAccounts'
+        paymentAccountsDetails:
+          $ref: '#/components/schemas/paymentAccountsDetails'
+        updated_at:
+          $ref: '#/components/schemas/updated_at'
+      required:
+        - sub
+        - txn
+    wallet_post_callback:
+      description: Response form Wallet in direct_post mode
+      properties:
+        vp_token:
+          $ref: '#/components/parameters/callback_vp_token'
+        id_token:
+          $ref: '#/components/parameters/callback_id_token'
+        presentation_submission:
+          $ref: '#/components/parameters/callback_presentation_submission'
+
+    wallet_post_jwt_callback:
+      description: Response form Wallet in direct_post mode
+      properties:
+        response:
+          description: JWT containing wallet_post_callback parameters.
+    profile:
+      description: Provide detailed information about user
+      properties:
+        sub:
+          type: string
+          description: Identifier for the End-User at the Issuer.
+          example: 23f1ac00-5d54-4169-a288-794ae2ead0c4
+        txn:
+          type: string
+          description: >-
+            The txn Claim as defined in [RFC8417] is used in the context of this extension to build audit trails across the parties involved in an
+            OpenID Connect transaction.
+          example: 31470547-0f7f-4794-acb0-d959f5a711a5
+        verified_claims:
+          $ref: '#/components/schemas/verified_claims'
+        title_prefix:
+          $ref: '#/components/schemas/title_prefix'
+        title_suffix:
+          $ref: '#/components/schemas/title_suffix'
+        given_name:
+          $ref: '#/components/schemas/given_name'
+        family_name:
+          $ref: '#/components/schemas/family_name'
+        middle_name:
+          $ref: '#/components/schemas/middle_name'
+        gender:
+          $ref: '#/components/schemas/gender'
+        birthdate:
+          $ref: '#/components/schemas/birthdate'
+        birthnumber:
+          $ref: '#/components/schemas/birthnumber'
+        age:
+          $ref: '#/components/schemas/age'
+        majority:
+          $ref: '#/components/schemas/majority'
+        date_of_death:
+          $ref: '#/components/schemas/date_of_death'
+        birthplace:
+          $ref: '#/components/schemas/birthplace'
+        birthcountry:
+          $ref: '#/components/schemas/birthcountry'
+        primary_nationality:
+          $ref: '#/components/schemas/primary_nationality'
+        nationalities:
+          $ref: '#/components/schemas/nationalities'
+        maritalstatus:
+          $ref: '#/components/schemas/maritalstatus'
+        addresses:
+          $ref: '#/components/schemas/addresses'
+        idcards:
+          $ref: '#/components/schemas/idcards'
+        email:
+          $ref: '#/components/schemas/email'
+        phone_number:
+          $ref: '#/components/schemas/phone_number'
+        pep:
+          $ref: '#/components/schemas/pep'
+        limited_legal_capacity:
+          $ref: '#/components/schemas/limited_legal_capacity'
+        paymentAccounts:
+          $ref: '#/components/schemas/paymentAccounts'
+        paymentAccountsDetails:
+          $ref: '#/components/schemas/paymentAccountsDetails'
+        updated_at:
+          $ref: '#/components/schemas/updated_at'
+      required:
+        - sub
+        - txn
+    verified_claims:
+      description: 'By this element Bank iD wants to ensure that RPs cannot mix up verified and unverified Claims and incidentally process unverified Claims as verified Claims.'
+      type: object
+      properties:
+        verification:
+          $ref: '#/components/schemas/verification'
+    unauthorized:
+      description: Unauthorized
+      properties:
+        error:
+          type: string
+          title: error
+        error_description:
+          type: string
+          title: message
+      required:
+        - error
+    forbidden:
+      description: Authentication with an expired access token or  bearer access token having insufficient privileges
+      properties:
+        error:
+          type: string
+          title: error
+        error_description:
+          type: string
+          title: message
+      required:
+        - error
+
+    OIDCConfiguration:
+      description: >-
+        It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
+      type: object
+      required:
+        - issuer
+        - authorization_endpoint
+        - token_endpoint
+        - jwks_uri
+        - scopes_supported
+        - response_types_supported
+        - subject_types_supported
+        - id_token_signing_alg_values_supported
+        - check_session_iframe
+        - end_session_endpoint
+      properties:
+        issuer:
+          type: string
+          format: uri
+          description: URL using the https scheme with no query or fragment component that the OP asserts as its Issuer Identifier. If Issuer discovery is supported (see Section 2), this value MUST be identical to the issuer value returned by WebFinger. This also MUST be identical to the iss Claim value in ID Tokens issued from this Issuer.
+          example: https://idp.example.com
+        authorization_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's OAuth 2.0 Authorization Endpoint [OpenID.Core].
+          example: https://idp.example.com/auth
+        token_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's OAuth 2.0 Token Endpoint [OpenID.Core]. This is REQUIRED unless only the Implicit Flow is used.
+          example: https://idp.example.com/token
+        userinfo_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's UserInfo Endpoint [OpenID.Core]. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/userinfo
+        profile_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's Profile Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/profile
+        ros_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's ROS Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/ros
+        authorize_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's Authorize Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/authorize
+        verification_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's Verification Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/verification
+        introspection_endpoint:
+          type: string
+          format: uri
+          description: URL of the OP's Introspection Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
+          example: https://idp.example.com/token-info
+        jwks_uri:
+          type: string
+          format: uri
+          description: URL of the OP's JSON Web Key Set [JWK] document. This contains the signing key(s) the RP uses to validate signatures from the OP. The JWK Set MAY also contain the Server's encryption key(s), which are used by RPs to encrypt requests to the Server. When both signing and encryption keys are made available, a use (Key Use) parameter value is REQUIRED for all keys in the referenced JWK Set to indicate each key's intended usage. Although some algorithms allow the same key to be used for both signatures and encryption, doing so is NOT RECOMMENDED, as it is less secure. The JWK x5c parameter MAY be used to provide X.509 representations of keys provided. When used, the bare key values MUST still be present and MUST match those in the certificate.
+          example: https://idp.example.com/.well-known/jwks
+        scopes_supported:
+          type: array
+          items:
+            type: string
+          description: JSON array containing a list of the OAuth 2.0 [RFC6749] scope values that this server supports. The server MUST support the openid scope value. Servers MAY choose not to advertise some supported scope values even when this parameter is used, although those defined in [OpenID.Core] SHOULD be listed, if supported.
+          example: [ openid, profile.email ]
+        response_types_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - code
+              - token
+          description: JSON array containing a list of the OAuth 2.0 response_type values that this OP supports. Dynamic OpenID Providers MUST support the code and the token Response Type values.
+          example: [ code, token ]
+        response_modes_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - query
+          description: JSON array containing a list of the OAuth 2.0 response_mode values that this OP supports, as specified in OAuth 2.0 Multiple Response Type Encoding Practices [OAuth.Responses]. If omitted, the default for Dynamic OpenID Providers is ["query", "fragment"].
+          example: [ 'query' ]
+        grant_types_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - authorization_code
+              - implicit
+              - refresh_token
+          description: JSON array containing a list of the OAuth 2.0 Grant Type values that this OP supports. Dynamic OpenID Providers MUST support the authorization_code and implicit Grant Type values and MAY support other Grant Types. If omitted, the default value is ["authorization_code", "implicit"].
+          example: [ 'authorization_code', 'refresh_token' ]
+        acr_values_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - loa3
+              - loa2
+            example: [ 'loa2', 'loa3' ]
+          description: JSON array containing a list of the Authentication Context Class References that this OP supports.
+        subject_types_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - pairwise
+              - public
+          description: JSON array containing a list of the Subject Identifier types that this OP supports. Valid types include pairwise and public.
+          example: [ 'pairwise' ]
+        code_challenge_methods_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - plain
+              - S256
+          description: JSON array containing a list of Proof Key for Code Exchange (PKCE) [RFC7636] code challenge methods supported by this OP.
+          example: [ 'plain', 'S256' ]
+        id_token_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
+        id_token_encryption_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
+        id_token_encryption_enc_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
+        userinfo_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        userinfo_encryption_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        userinfo_encryption_enc_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        profile_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        profile_encryption_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        profile_encryption_enc_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
+        request_object_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSAsymmetricAlg' ]
+          description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for Request Objects, which are described in Section 6.1 of OpenID Connect Core 1.0 [OpenID.Core]. These algorithms are used both when the Request Object is passed by value (using the request parameter) and when it is passed by reference (using the request_uri parameter). Servers MUST support ES512 and PS512.
+        request_object_encryption_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
+        request_object_encryption_enc_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
+        token_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - private_key_jwt
+              - client_secret_post
+              - client_secret_jwt
+          description: >-
+            JSON array containing a list of Client Authentication methods supported by this Token Endpoint.
+            Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
+            Other authentication methods MAY be defined by extensions.
+        token_endpoint_auth_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Token Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Token Endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
+        introspection_endpoint_auth_methods_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - private_key_jwt
+              - client_secret_post
+              - client_secret_jwt
+          description: >-
+            JSON array containing a list of Client Authentication methods supported by this Introspection Endpoint.
+            Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
+            Other authentication methods MAY be defined by extensions.
+        introspection_endpoint_auth_signing_alg_values_supported:
+          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Introspection Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Introspection endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
+        display_values_supported:
+          type: array
+          items:
+            type: string
+            enum:
+              - page
+              - popup
+              - touch
+          description: >-
+            JSON array containing a list of the display parameter values that the OpenID Provider supports.
+            These values are described in Section 3.1.2.1 of OpenID Connect Core 1.0 [OpenID.Core].
+        service_documentation:
+          type: string
+          format: uri
+          description: URL of a page containing human-readable information that developers might want or need to know when using the OpenID Provider. In particular, if the OpenID Provider does not support Dynamic Client Registration, then information on how to register Clients needs to be provided in this documentation.
+          example: https://idp.example.com/docs
+        claims_locales_supported:
+          type: array
+          items:
+            type: string
+            format: BCP47
+          description: Languages and scripts supported for values in Claims being returned, represented as a JSON array of BCP47 [RFC5646] language tag values. Not all languages and scripts are necessarily supported for all Claim values.
+          example: [ en-CA, en ]
+        ui_locales_supported:
+          type: array
+          items:
+            type: string
+            format: BCP47
+          description: Languages and scripts supported for the user interface, represented as a JSON array of BCP47 [RFC5646] language tag values.
+          example: [ cs, en-US, en ]
+        claims_parameter_supported:
+          type: boolean
+          default: true
+          description: Boolean value specifying whether the OP supports use of the claims parameter, with true indicating support. If omitted, the default value is false.
+        request_parameter_supported:
+          type: boolean
+          default: false
+          description: Boolean value specifying whether the OP supports use of the request parameter, with true indicating support. If omitted, the default value is false.
+        request_uri_parameter_supported:
+          type: boolean
+          default: true
+          description: Boolean value specifying whether the OP supports use of the request_uri parameter, with true indicating support. If omitted, the default value is true.
+        require_request_uri_registration:
+          type: boolean
+          default: false
+          description: Boolean value specifying whether the OP requires any request_uri values used to be pre-registered using the request_uris registration parameter. Pre-registration is REQUIRED when the value is true. If omitted, the default value is false.
+        op_policy_uri:
+          type: string
+          format: uri
+          description: URL that the OpenID Provider provides to the person registering the Client to read about the OP's requirements on how the Relying Party can use the data provided by the OP. The registration process SHOULD display this URL to the person registering the Client if it is given.
+          example: https://idp.example.com/policy
+        op_tos_uri:
+          type: string
+          format: uri
+          description: URL that the OpenID Provider provides to the person registering the Client to read about OpenID Provider's terms of service. The registration process SHOULD display this URL to the person registering the Client if it is given.
+          example: https://idp.example.com/tos
+        backchannel_logout_supported:
+          type: boolean
+          description: Indicates if back-channel logout is supported. Back-channel logout needs to be registered during dynamic client registration.
+        backchannel_logout_session_supported:
+          type: boolean
+          description: Boolean value specifying whether the OP can pass a sid (session ID) Claim in the Logout Token to identify the RP session with the OP. If supported, the sid Claim is also included in ID Tokens issued by the OP. If omitted, the default value is false.
+        claims_supported:
+          type: array
+          items:
+            type: string
+          description: RECOMMENDED. JSON array containing a list of the Claim Names of the Claims that the OpenID Provider MAY be able to supply values for. Note that for privacy or other reasons, this might not be an exhaustive list.
+        check_session_iframe:
+          type: string
+          format: uri
+          description: |-
+            URL of an OP iframe that supports cross-origin communications for session state information with the RP Client,
+            using the HTML5 postMessage API. The page is loaded from an invisible iframe embedded in an RP page so that it 
+            can run in the OP's security context. It accepts postMessage requests from the relevant RP iframe and uses 
+            postMessage to post back the login status of the End-User at the OP.
+          example: https://idp.example.org/session-iframe
+        end_session_endpoint:
+          type: string
+          format: uri
+          description: URL at the OP to which an RP can perform a redirect to request that the End-User be logged out at the OP.
+          example: https://idp.example.org/logout
+        frontchannel_logout_supported:
+          type: boolean
+          description: Boolean value specifying whether the OP supports HTTP-based logout, with true indicating support. If omitted, the default value is false.
+          example: true
+        frontchannel_logout_session_supported:
+          type: boolean
+          description: >-
+            Boolean value specifying whether the OP can pass iss (issuer) and sid (session ID) query parameters to identify the RP session with the OP when the frontchannel_logout_uri is used. 
+            If supported, the sid Claim is also included in ID Tokens issued by the OP. If omitted, the default value is false.
+
+    JWKS:
+      description: JSONWebKeySet JSON web key set
+      type: object
+      properties:
+        keys:
+          description: >-
+            The value of the "keys" parameter is an array of JWK values.  By default, the order of the JWK values within the array does not imply
+            an order of preference among them, although applications of JWK Sets can choose to assign a meaning to the order for their purposes, if
+            desired.
+          type: array
+          items:
+            $ref: '#/components/schemas/JWK'
+
+    JWK:
+      description: JSON Web Key [RFC7517](https://tools.ietf.org/html/rfc7517)
+      type: object
+      required:
+        - use
+        - kty
+        - kid
+        - alg
+        - x5c
+      properties:
+        alg:
+          description: >-
+            The "alg" (algorithm) parameter identifies the algorithm intended for use with the key.  The values used should either be registered in the
+            IANA "JSON Web Signature and Encryption Algorithms" registry established by [JWA] or be a value that contains a Collision-
+            Resistant Name. The "alg" value is a case-sensitive ASCII string.
+          type: string
+          example: RS256
+          enum:
+            - RS256
+            - RS384
+            - RS512
+            - ES256
+            - ES384
+            - ES512
+            - RSA1_5
+            - RSA-OAEP
+            - ECDH-ES
+            - A128KW
+            - A256KW
+            - A128GCM
+            - A256GCM
+        kid:
+          description: >-
+            The "kid" (key ID) parameter is used to match a specific key.  This is used, for instance, to choose among a set of keys within a JWK Set
+            during key rollover.  The structure of the "kid" value is unspecified.  When "kid" values are used within a JWK Set, different
+            keys within the JWK Set SHOULD use distinct "kid" values.  (One example in which different keys might use the same "kid" value is if
+            they have different "kty" (key type) values but are considered to be equivalent alternatives by the application using them.)  The "kid"
+            value is a case-sensitive string.  Use of this member is OPTIONAL. When used with JWS or JWE, the "kid" value is used to match a JWS or
+            JWE "kid" Header Parameter value.
+          type: string
+          example: 1603dfe0af8f4596
+        key_ops:
+          description: >-
+            The "key_ops" (key operations) parameter identifies the operation(s) for which the key is intended to be used.  The "key_ops" parameter is
+            intended for use cases in which public, private, or symmetric keys may be present.
+
+
+            Its value is an array of key operation values.  Values defined by  this specification are:
+            * "sign" (compute digital signature or MAC)
+            * "verify" (verify digital signature or MAC)
+            * "encrypt" (encrypt content)
+            * "decrypt" (decrypt content and validate decryption, if applicable)
+            * "wrapKey" (encrypt key)
+            * "unwrapKey" (decrypt key and validate decryption, if applicable)
+            * "deriveKey" (derive key)
+            * "deriveBits" (derive bits not to be used as a key)
+
+            (Note that the "key_ops" values intentionally match the "KeyUsage" values defined in the Web Cryptography API
+            [W3C.CR-WebCryptoAPI-20141211] specification.)
+
+
+            Other values MAY be used.  The key operation values are case-sensitive strings.  Duplicate key operation values MUST NOT be
+            present in the array.  Use of the "key_ops" member is OPTIONAL, unless the application requires its presence.
+
+
+            Multiple unrelated key operations SHOULD NOT be specified for a key  because of the potential vulnerabilities associated with using the
+            same key with multiple algorithms.  Thus, the combinations "sign" with "verify", "encrypt" with "decrypt", and "wrapKey" with
+            "unwrapKey" are permitted, but other combinations SHOULD NOT be used.
+
+
+            Additional "key_ops" (key operations) values can be registered in the IANA "JSON Web Key Operations" registry established by Section 8.3.
+            The same considerations about registering extension values apply to the "key_ops" member as do for the "use" member.
+
+
+            The "use" and "key_ops" JWK members SHOULD NOT be used together; however, if both are used, the information they convey MUST be
+            consistent.  Applications should specify which of these members they use, if either is to be used by the application.
+          type: array
+          items:
+            type: string
+            enum:
+              - sign
+              - verify
+              - encrypt
+              - decrypt
+              - wrapKey
+              - unwrapKey
+              - deriveKey
+              - deriveBits
+          example: [ sign, verify ]
+        use:
+          description: >-
+            The "use" (public key use) parameter identifies the intended use of the public key.  The "use" parameter is employed to indicate whether
+            a public key is used for encrypting data or verifying the signature on data.
+
+
+            Values defined by this specification are:
+            *  "sig" (signature)
+            *  "enc" (encryption)
+
+            Other values MAY be used.  The "use" value is a case-sensitive string.  Use of the "use" member is OPTIONAL, unless the application
+            requires its presence.
+
+            When a key is used to wrap another key and a public key use designation for the first key is desired, the "enc" (encryption) key
+            use value is used, since key wrapping is a kind of encryption.  The "enc" value is also to be used for public keys used for key agreement
+            operations.
+          type: string
+          enum:
+            - sig
+            - enc
+          example: sig
+        kty:
+          description: >-
+            The "kty" (key type) parameter identifies the cryptographic algorithm family used with the key, such as "RSA" or "EC".  "kty" values should
+            either be registered in the IANA "JSON Web Key Types" registry established by [JWA] or be a value that contains a Collision-
+            Resistant Name.  The "kty" value is a case-sensitive string.  This member MUST be present in a JWK.
+
+
+            A list of defined "kty" values can be found in the IANA "JSON Web Key Types" registry established by [JWA]; the initial contents of this
+            registry are the values defined in Section 6.1 of [JWA].
+
+
+            The key type definitions include specification of the members to be used for those key types.  Members used with specific "kty" values
+            can be found in the IANA "JSON Web Key Parameters" registry established by Section 8.1.
+          type: string
+          example: RSA
+          enum:
+            - RSA
+            - EC
+        x5c:
+          description: >-
+            The "x5c" (X.509 certificate chain) parameter contains a chain of one or more PKIX certificates [RFC5280].  The certificate chain is
+            represented as a JSON array of certificate value strings.  Each string in the array is a base64-encoded (Section 4 of [RFC4648] --
+            not base64url-encoded) DER [ITU.X690.1994] PKIX certificate value. The PKIX certificate containing the key value MUST be the first
+            certificate.  This MAY be followed by additional certificates, with each subsequent certificate being the one used to certify the
+            previous one.  The key in the first certificate MUST match the public key represented by other members of the JWK.
+          type: string
+          format: uri
+          example: MIICUDCCAbmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJjejEOMAwGA1UECAwFUHJhaGExEDAOBgNVBAoMB0V4YW1wbGUxFDASBgNVBAMMC2V4YW1wbGUuY29tMB4XDTIwMDExNjE2NDExOFoXDTIxMDExNTE2NDExOFowRTELMAkGA1UEBhMCY3oxDjAMBgNVBAgMBVByYWhhMRAwDgYDVQQKDAdFeGFtcGxlMRQwEgYDVQQDDAtleGFtcGxlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArOEYBRyBhcd6u3phrbU2xvTaBoy6W14CpqqfsBrfsUsuSB+JELBCj3a+zRIvy4EY9cnQbF7cPNxbXdCbGEokAUjIIuVBk/I6XhKRe01vlax82o+eFfIhUfl7Xb2Bx9U3m98Qbt3WNrv+VYJjjFP8HWSsWCHKCazj+yvozjuFXUsCAwEAAaNQME4wHQYDVR0OBBYEFN5SUrsStd4aLhBs+MWGRDxLeUP4MB8GA1UdIwQYMBaAFN5SUrsStd4aLhBs+MWGRDxLeUP4MAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADgYEAL59fE6itiRrck6Z7RCjwnOnebQJxpoB/L7TUC/aUIXss40mCviBVKD+Hl4+3sGyp4J2LlzzqhFcPgR9NyxQt0bkahJGH0UXvZETJe719UA0kGFrPMdt6ujwB6/rafT6TinzXN0lEEGikersTrh3BR9Hjw+v7nCQ0D5RfuDn6s5s=
+
+    JWSDefaultAlg:
+      externalDocs:
+        description: 'OpenID JWS supported algorithm'
+        url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
+      type: array
+      example: [ 'ES512', 'PS512' ]
+      items:
+        type: string
+        enum:
+          - ES512
+          - PS512
+
+    JWSAsymmetricAlg:
+      externalDocs:
+        description: 'OpenID JWS supported algorithm'
+        url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
+      type: array
+      example: [ 'RS512' ]
+      items:
+        type: string
+        enum:
+          - RS256
+          - RS512
+          - PS512
+          - ES512
+
+    JWSSymmetricAndAsymmetricAlg:
+      externalDocs:
+        description: 'OpenID JWS supported algorithm'
+        url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
+      type: array
+      example: [ 'RS512' ]
+      items:
+        type: string
+        enum:
+          - HS256
+          - HS512
+          - RS256
+          - RS512
+          - PS512
+          - ES512
+
+    JWEAlg:
+      externalDocs:
+        description: 'RFC7518 and JSON Web Encryption (JWE) draft-jones-json-web-encryption-02'
+        url: https://openid.net/specs/draft-jones-json-web-encryption-02.html#AlgTable
+      type: array
+      example: [ 'ECDH-ES' ]
+      items:
+        type: string
+        enum:
+          - ECDH-ES
+          - RSA-OAEP-256
+          - RSA-OAEP
+
+    JWEEnc:
+      externalDocs:
+        description: 'RFC7518 and JSON Web Encryption (JWE) draft-jones-json-web-encryption-02'
+        url: https://openid.net/specs/draft-jones-json-web-encryption-02.html#EncTable
+      type: array
+      example: [ 'A256GCM' ]
+      items:
+        type: string
+        enum:
+          - A256GCM
+
+    AuthorizationCodeTokenRequest:
+      title: Authorization Code request
+      description: 'A Client makes a Token Request by presenting its Authorization Grant (in the form of an Authorization Code) to the Token Endpoint using the grant_type value authorization_code.'
+      allOf:
+        - $ref: '#/components/schemas/TokenCommonPartRequest'
+        - type: object
+          required:
+            - code
+          properties:
+            code:
+              type: string
+              description: 'The authorization code received from the authorization server.'
+              example: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+      example:
+        value:
+          grant_type: authorization_code
+          code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
+          redirect_uri: 'https://rp.example.com/callback'
+
+    TokenCommonPartRequest:
+      allOf:
+        - $ref: '#/components/schemas/ClientSecretPost'
+        - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
+        - required:
+            - grant_type
+            - redirect_uri
+          properties:
+            grant_type:
+              type: string
+              description: ''
+              enum:
+                - authorization_code
+                - refresh_token
+              example: 'authorization_code'
+            redirect_uri:
+              type: string
+              format: uri
+              description: >-
+                If the "redirect_uri" parameter was included in the authorization request. Their values MUST be identical.
+              example: 'https://rp.example.com/callback'
+
+    ClientSecretPost:
+      properties:
+        client_id:
+          description: 'OAuth 2.0 Client Identifier valid at the Authorization Server.'
+          type: string
+          example: d1bdc32e-1b06-4609-9f60-073685267f88
+        client_secret:
+          description: >-
+            The client secret used to authenticate the client if `client_secret_post`authentication method is used. Defined in [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication)
+          type: string
+          example: GBAyfVL7YWtP6gudLDrvVN0dW4f3xETiIxqtokEAZ6FAsBtgyIq4DLVkdxOTO2zwP0OuO3pMVAUTid
+
+    PrivateKeyJwtAuthKeys:
+      properties:
+        client_assertion:
+          type: string
+          format: JWT
+          description: >-
+            The client-signed assertion in the form of a JWT used to authenticate the client if `client_secret_jwt` or `private_key_jwt` authentication methods are used. Defined in
+            [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication)
+          example: 'PHNhbWxwOl ... ZT'
+        client_assertion_type:
+          type: string
+          description: >-
+            The type of client assertion used as defined in
+            [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication)
+          example: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer'
+
+    TokenInfoResponse:
+      required:
+        - active
+        - scope
+        - client_id
+        - token_type
+        - exp
+        - iat
+        - sub
+        - iss
+      properties:
+        active:
+          description:
+            'Boolean indicator of whether or not the presented token is currently active.  The specifics of a token''s "active" state will vary depending on the implementation of the authorization
+            server and the information it keeps about its tokens, but a "true" value return for the "active" property will generally indicate that a given token has been issued by this authorization server,
+            has not been revoked by the resource owner, and is within its given time window of validity'
+          type: boolean
+          example: true
+        scope:
+          description: 'A JSON string containing a space-separated list of scopes associated with this token'
+          type: string
+          example: openid profile.addresses
+        client_id:
+          description: 'Client identifier for the OAuth 2.0 client that requested this token.'
+          type: string
+          example: d1bdc32e-1b06-4609-9f60-073685267f88
+        token_type:
+          description: Type of the token as defined in Section 5.1 of OAuth 2.0 [RFC6749]
+          type: string
+          enum:
+            - access_token
+            - refresh_token
+          example: access_token
+        exp:
+          description: 'Number of seconds since January 1 1970 UTC, indicating when this token will expire, as defined in JWT'
+          type: integer
+          format: int64
+          example: 1419356238
+        iat:
+          description: 'Integer timestamp, measured in the number of seconds since January 1 1970 UTC, indicating when this token was originally issued, as defined in JWT'
+          type: integer
+          format: int64
+          example: 1419350238
+        sub:
+          description: 'Subject of the token, as defined in JWT. Usually a machine-readable identifier of the resource owner who authorized this token.'
+          type: string
+          example: 25657805-66d4-4707-980a-f12429f17592
+        iss:
+          description: 'String representing the issuer of this token, as defined in JWT.'
+          type: string
+          example: https://server.example.com/
+
+    TokenErrorResponse:
+      externalDocs:
+        description: '[RFC6749](https://tools.ietf.org/html/rfc6749#section-5.2) Token Error Response'
+        url: https://tools.ietf.org/html/rfc6749#section-5.2
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - invalid_grant
+            - unauthorized_client
+            - unsupported_grant_type
+            - invalid_client
+            - invalid_scope
+          description: >-
+            Possible error codes:
+            * invalid_request - The request is missing a required parameter.
+            * invalid_grant - The provided authorization grant or refresh token is invalid, expired, revoked etc.
+            * invalid_client - Client authentication failed
+            * unauthorized_client - The authenticated client is not authorized to use this authorization grant type.
+            * unsupported_grant_type - The authorization grant type is not supported by the authorization server.
+            * invalid_scope - The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner.
+          example: invalid_request
+        error_description:
+          type: string
+          description: Additional text description of the error for debugging.
+          example: Missing required parameter
+        error_uri:
+          type: string
+          description: A URI identifying a human-readable web page with information with details of the error.
+          example: https://page.with.errorcodes.org/invalid_request
+      required:
+        - error
+      description: >-
+        The authorization server responds with an HTTP 400 (Bad Request) status code (unless specified otherwise) and includes the following parameters with the response:
+
+        * **error** - **REQUIRED**.  A single ASCII [USASCII] error code from the following:
+
+          - **invalid_request** - 
+                The request is missing a required parameter, includes an unsupported parameter value (other than grant type), repeats a parameter, includes multiple credentials,
+                utilizes more than one mechanism for authenticating the client, or is otherwise malformed.
+
+          - **invalid_client** -
+                Client authentication failed (e.g., unknown client, no client authentication included, or unsupported authentication method).  The authorization server MAY
+                return an HTTP 401 (Unauthorized) status code to indicate which HTTP authentication schemes are supported.  If the client attempted to authenticate via the "Authorization"
+                request header field, the authorization server MUST respond with an HTTP 401 (Unauthorized) status code and include the "WWW-Authenticate" response header field
+                matching the authentication scheme used by the client.
+
+          - **invalid_grant** -
+                The provided authorization grant (e.g., authorization code, resource owner credentials) or refresh token is invalid, expired, revoked, does not match the redirection
+                URI used in the authorization request, or was issued to another client.
+
+          - **unauthorized_client** -
+                The authenticated client is not authorized to use this authorization grant type.
+
+          - **unsupported_grant_type** - 
+                The authorization grant type is not supported by the authorization server.
+
+          - **invalid_scope** -
+                The requested scope is invalid, unknown, malformed, or exceeds the scope granted by the resource owner.
+
+          Values for the "error" parameter MUST NOT include characters outside the set %x20-21 / %x23-5B / %x5D-7E.
+
+        * **error_description**
+              OPTIONAL.  Human-readable ASCII [USASCII] text providing additional information, used to assist the client developer in understanding the error that occurred.
+              Values for the "error_description" parameter MUST NOT include characters outside the set %x20-21 / %x23-5B / %x5D-7E.
+
+        * **error_uri**
+              OPTIONAL.  A URI identifying a human-readable web page with information about the error, used to provide the client developer with additional information about the error.
+              Values for the "error_uri" parameter MUST conform to the URI-reference syntax and thus MUST NOT include characters outside the set %x21 / %x23-5B / %x5D-7E.
+
+    TokenIntrospectionRequest:
+      description: >-
+        The protected resource calls the introspection endpoint using an HTTP POST [RFC7231] request with parameters sent as "application/x-www-form-urlencoded" data as defined in
+        [W3C.REC-html5-20141028].  The protected resource sends a parameter representing the token along with optional parameters representing additional context that is known by 
+        the protected resource to aid the authorization server in its response.
+      externalDocs:
+        description: '[RFC7662] OAuth 2.0 Token Introspection - 2.1.  Introspection Request'
+        url: https://tools.ietf.org/html/rfc7662#section-2.1
+
+      allOf:
+        - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
+        - required:
+            - token
+          properties:
+            token:
+              type: string
+              description: >-
+                The string value of the token.  For access tokens, this is the "access_token" value returned from the token endpoint defined in OAuth 2.0 [RFC6749], Section 5.1.  For refresh tokens,
+                this is the "refresh_token" value returned from the token endpoint as defined in OAuth 2.0 [RFC6749], Section 5.1.
+              example: 'WwVEraxkI7KbtP31wD3XSpZKqGpsLiXg'
+            token_type_hint:
+              type: string
+              description: >-
+                The protected resource MAY pass this parameter to help the authorization server optimize the token lookup.  If the server is unable to locate the token using the given hint, it MUST
+                extend its search across all of its supported token types.  An authorization server MAY ignore this parameter, particularly if it is able to detect the token type automatically.
+                Values for this field are defined in the "OAuth Token Type Hints" registry defined in OAuth Token Revocation [RFC7009].
+              enum:
+                - refresh_token
+                - access_token
+              example: refresh_token
+    SignHashRequest:
+      required:
+        - credentialID
+        - hashes
+        - hashAlgorithmOID
+        - signAlgo
+      properties:
+        credentialID:
+          type: string
+        SAD:
+          type: string
+        hashes:
+          type: array
+        hashAlgorithmOID:
+          type: string
+        signAlgo:
+          type: string
+        signAlgoParams:
+          type: string
+        operationMode:
+          type: string
+        validity_period:
+          type: integer
+        response_uri:
+          type: string
+        clientData:
+          type: string
+
+    SignHashResponse:
+      properties:
+        signatures:
+          type: array
+        responseID:
+          type: string
+    IDToken:
+      externalDocs:
+        description: '[OpenID.Core ID Token] 2 ID Token'
+        url: 'https://openid.net/specs/openid-connect-core-1_0.html#IDToken'
+      description: >-
+        The primary extension that OpenID Connect makes to OAuth 2.0 to enable End-Users to be Authenticated is the ID Token data structure.
+        The ID Token is a security token that contains Claims about the Authentication of an End-User by an Authorization Server when using a Client, and potentially other requested Claims.
+        The ID Token is represented as a JSON Web Token (JWT) [JWT].
+      type: object
+      required:
+        - iss
+        - sid
+        - aud
+        - exp
+        - iat
+        - auth_time
+        - nonce
+      properties:
+        iss:
+          type: string
+          description: Issuer Identifier, as specified in Section 2 of [OpenID.Core].
+        sub:
+          type: string
+          description: Subject Identifier, as specified in Section 2 of [OpenID.Core].
+        sid:
+          type: string
+          description: >-
+            Session ID - String identifier for a Session. This represents a Session of a User Agent or device for a logged-in End-User at an RP. Different sid values are used to identify
+            distinct sessions at an OP. The sid value need only be unique in the context of a particular issuer. Its contents are opaque to the RP. Its syntax is the same as an OAuth 2.0 Client Identifier.
+        aud:
+          type: string
+          description: Audience(s), as specified in Section 2 of [OpenID.Core].
+        exp:
+          type: integer
+          format: int64
+          description: >-
+            Expiration time on or after which the ID Token MUST NOT be accepted for processing. The processing of this parameter requires that the current date/time MUST be before 
+            the expiration date/time listed in the value. Implementers MAY provide for some small leeway, usually no more than a few minutes, to account for clock skew. 
+            Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time. See RFC 3339 [RFC3339] for details regarding 
+            date/times in general and UTC in particular.
+          example: 234567890
+        iat:
+          type: integer
+          format: int64
+          description: >-
+            Time at which the JWT was issued. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
+          example: 23457890
+        auth_time:
+          type: integer
+          format: int64
+          description: >-
+            Time when the End-User authentication occurred. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time. 
+            When a max_age request is made or when auth_time is requested as an Essential Claim, then this Claim is REQUIRED; otherwise, its inclusion is OPTIONAL. (The auth_time Claim 
+            semantically corresponds to the OpenID 2.0 PAPE [OpenID.PAPE] auth_time response parameter.)
+          example: 23456789
+        nonce:
+          type: string
+          description: >-
+            String value used to associate a Client session with an ID Token, and to mitigate replay attacks. The value is passed through unmodified from the Authentication 
+            Request to the ID Token. If present in the ID Token, Clients MUST verify that the nonce Claim Value is equal to the value of the nonce parameter sent in the Authentication Request. 
+            If present in the Authentication Request, Authorization Servers MUST include a nonce Claim in the ID Token with the Claim Value being the nonce value sent in the Authentication Request. 
+            Authorization Servers SHOULD perform no other processing on nonce values used. The nonce value is a case sensitive string.
+            In case of Logout ID Token a nonce Claim MUST NOT be present.
+            Its use is prohibited to make a Logout Token syntactically invalid if used in a forged Authentication Response in place of an ID Token.
+          example: 'nxrt-084-222_wdutKuOasdj'
+        jti:
+          type: string
+          description: >-
+            The `jti` (JWT ID) claim provides a unique identifier for the JWT. The identifier value MUST be assigned in a manner that ensures that
+            there is a negligible probability that the same value will be accidentally assigned to a different data object; if the application
+            uses multiple issuers, collisions MUST be prevented among values produced by different issuers as well.  The `jti` claim can be used
+            to prevent the JWT from being replayed.  The `jti` value is a case-sensitive string.
+          example: 95E3440A-C986-4E8B-9678-605F9B2FE7C5
+
+    userinfo_claims:
+      description: >
+        UTF-8 encoded JSON contains filed defined in `supported_claims` defined in '#/components/schemas/OIDCConfiguration'
+      type: object
+      properties:
+        name:
+          type: string
+          description: >
+            End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
+          example: 'John Doe'
+        given_name:
+          type: string
+          description: >
+            Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can be present, with the names being separated by space characters.
+          example: 'John'
+        family_name:
+          type: string
+          description: >
+            Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple family names or no family name; all can be present, with the names being separated by space characters.
+          example: 'Doe'
+        middle_name:
+          type: string
+          description: >
+            Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; all can be present, with the names being separated by space characters. Also note that in some cultures, middle names are not used.
+          example: ''
+        nickname:
+          type: string
+          description: >
+            Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickname value of Mike might be returned alongside a given_name value of Michael.
+          example: 'JD'
+        preferred_username:
+          type: string
+          description: >
+            Shorthand name by which the End-User wishes to be referred to at the RP, such as `janedoe` or `j.doe`. This value MAY be any valid JSON string including special characters such as @, /, or whitespace. The RP MUST NOT rely upon this value being unique.
+          example: 'j.doe'
+        title_prefix:
+          type: string
+          description: >
+            "End-User's title prefix."
+          example: 'Mgr.'
+        title_suffix:
+          type: string
+          description: >
+            "End-User's title suffix."
+          example: 'Csc.'
+        email:
+          type: string
+          description: >
+            End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. **The API consumer MUST NOT rely upon this value being unique.**
+          example: 'j.doe@example.com'
+        email_verified:
+          type: boolean
+          description: >
+            True if the End-User's e-mail address has been verified; otherwise false. When this Claim Value is true, 
+            this means that the OP took affirmative steps to ensure that this e-mail address was controlled by the End-User at the time the verification was performed. 
+            The means by which an e-mail address is verified is context-specific, and dependent upon the trust framework or contractual agreements within which the parties are operating.
+          example: true
+        gender:
+          type: string
+          enum:
+            - 'female'
+            - 'male'
+          description: >
+            End-User's gender. Values defined by this specification are `female` and `male`. Other values MAY be used when neither of the defined values are applicable.
+          example: 'male'
+        birthdate:
+          type: string
+          description: >
+            End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format. 
+            The year MAY be 0000, indicating that it is omitted. To represent only the year, YYYY format is allowed. 
+            Note that depending on the underlying platform's date related function, providing just year can result in varying month and day, 
+            so the implementers need to take this factor into account to correctly process the dates.
+          example: '1990-01-01'
+        zoneinfo:
+          type: string
+          description: >
+            String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example, `Europe/Paris` or `America/Los_Angeles`.
+          example: 'Europe/Prague'
+        locale:
+          type: string
+          description: >
+            End-User's locale, represented as a BCP47 [RFC5646] language tag. 
+            This is typically an ISO 639-1 Alpha-2 [ISO639‑1] language code in lowercase and an ISO 3166-1 Alpha-2 [ISO3166‑1] country code in uppercase, 
+            separated by a dash. For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator 
+            rather than a dash, for example, en_US; Relying Parties MAY choose to accept this locale syntax as well.
+          example: 'en-US'
+        phone_number:
+          type: string
+          description: >
+            End-User's preferred telephone number. E.164 [E.164] is RECOMMENDED as the format of this Claim, for example, +1 (425) 555-1212 or +56 (2) 687 2400.
+            If the phone number contains an extension, it is RECOMMENDED that the extension be represented using the RFC 3966 [RFC3966] extension syntax,
+            for example, +1 (604) 555-1234;ext=5678.
+          example: '+420 123 456 789'
+        phone_number_verified:
+          type: boolean
+          description: >
+            True if the End-User's phone number has been verified; otherwise false. 
+            When this Claim Value is true, this means that the OP took affirmative steps to ensure that this phone number was controlled by the End-User 
+            at the time the verification was performed. The means by which a phone number is verified is context-specific, and dependent upon the trust 
+            framework or contractual agreements within which the parties are operating. When true, the phone_number Claim MUST be in E.164 format and any 
+            extensions MUST be represented in RFC 3966 format.
+          example: true
+        updated_at:
+          type: integer
+          format: int64
+          description: >
+            Time the End-User's information was last updated. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
+          example: 1650887066
+
+    request_claims_param:
+      type: object
+      properties:
+        name:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
+        given_name:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can be present, with the names being separated by space characters.
+        family_name:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple family names or no family name; all can be present, with the names being separated by space characters.
+        middle_name:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; all can be present, with the names being separated by space characters. Also note that in some cultures, middle names are not used.
+        nickname:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickname value of Mike might be returned alongside a given_name value of Michael.
+        preferred_username:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Shorthand name by which the End-User wishes to be referred to at the RP, such as `janedoe` or `j.doe`. This value MAY be any valid JSON string including special characters such as @, /, or whitespace. The RP MUST NOT rely upon this value being unique.
+        title_prefix:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            "End-User's title prefix."
+        title_suffix:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            "End-User's title suffix."
+        email:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. **The API consumer MUST NOT rely upon this value being unique.**
+        email_verified:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            True if the End-User's e-mail address has been verified; otherwise false. When this Claim Value is true, 
+            this means that the OP took affirmative steps to ensure that this e-mail address was controlled by the End-User at the time the verification was performed. 
+            The means by which an e-mail address is verified is context-specific, and dependent upon the trust framework or contractual agreements within which the parties are operating.
+        gender:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's gender. Values defined by this specification are `female` and `male`. Other values MAY be used when neither of the defined values are applicable.
+        birthdate:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format. 
+            The year MAY be 0000, indicating that it is omitted. To represent only the year, YYYY format is allowed. 
+            Note that depending on the underlying platform's date related function, providing just year can result in varying month and day, 
+            so the implementers need to take this factor into account to correctly process the dates.
+        zoneinfo:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example, `Europe/Paris` or `America/Los_Angeles`.
+        locale:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's locale, represented as a BCP47 [RFC5646] language tag. 
+            This is typically an ISO 639-1 Alpha-2 [ISO639‑1] language code in lowercase and an ISO 3166-1 Alpha-2 [ISO3166‑1] country code in uppercase, 
+            separated by a dash. For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator 
+            rather than a dash, for example, en_US; Relying Parties MAY choose to accept this locale syntax as well.
+        phone_number:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            End-User's preferred telephone number. E.164 [E.164] is RECOMMENDED as the format of this Claim, for example, +1 (425) 555-1212 or +56 (2) 687 2400.
+            If the phone number contains an extension, it is RECOMMENDED that the extension be represented using the RFC 3966 [RFC3966] extension syntax,
+            for example, +1 (604) 555-1234;ext=5678.
+        phone_number_verified:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            True if the End-User's phone number has been verified; otherwise false. 
+            When this Claim Value is true, this means that the OP took affirmative steps to ensure that this phone number was controlled by the End-User 
+            at the time the verification was performed. The means by which a phone number is verified is context-specific, and dependent upon the trust 
+            framework or contractual agreements within which the parties are operating. When true, the phone_number Claim MUST be in E.164 format and any 
+            extensions MUST be represented in RFC 3966 format.
+        updated_at:
+          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          description: >
+            Time the End-User's information was last updated. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
+
+    claims_generic_types:
+      type: object
+      properties:
+        essential:
+          type: boolean
+          description: >
+            Client indicate that claim is essential.
+          example: true
+        purpose:
+          type: string
+          description: >
+            Short description why Client required claim from End-User information. Used for better UX and understanding consent screen by End-User.
+          example: To make communication look more personal
+
+    RequestInvalidError:
+      description: Request invalid
+      type: object
+      required:
+        - error
+        - error_description
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_redirect_uri
+            - invalid_client_metadata
+          description: >-
+            Possible error codes:
+            * `invalid_redirect_uri` - The value of one or more `redirect_uris` is invalid. 
+
+            * `invalid_client_metadata` - The value of one of the Client Metadata fields is invalid and the server has rejected this request.
+        error_description:
+          type: string
+          example: Redirect uri must be using https scheme
+          description: Additional text description of the error for debugging.
+        error_uri:
+          type: string
+          example: 'https://datatracker.ietf.org/doc/html/rfc6749#section-5.2'
+          description: Reference to authoritative description of returned error
+
+    WWW-Authenticate:
+      externalDocs:
+        description: '[RFC6750] - The OAuth 2.0 Authorization Framework: Bearer Token Usage -  3.1. Error Codes'
+        url: https://tools.ietf.org/html/rfc6750#section-3.1
+      type: string
+      enum:
+        - invalid_request
+        - invalid_token
+        - insufficient_scope
+      description: >-
+        Possible error codes:
+        * `invalid_request` - The request is missing a required parameter, includes an unsupported parameter or parameter value, repeats the same parameter, uses more than one method for including an access token, or is otherwise malformed. 
+          The resource server SHOULD respond with the HTTP 400 (Bad Request) status code.
+
+        * `invalid_token` - The access token provided is expired, revoked, malformed, or invalid for other reasons. 
+          The resource SHOULD respond with the HTTP 401 (Unauthorized) status code. 
+          The client MAY request a new access token and retry the protected resource request.
+
+        * `insufficient_scope` - The request requires higher privileges than provided by the access token. 
+          The resource server SHOULD respond with the HTTP 403 (Forbidden) status code and MAY include the "scope" attribute with the scope necessary to access the protected resource.
+
+  securitySchemes:
+    AccessTokenAuth:
+      type: http
+      scheme: bearer
+      description: '`access_token` acquired from the /token (in case of `code` flow) or /auth (in case of `implicit` flow) endpoint during RP authorization'
+    profile:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://
+          tokenUrl: https://
+          scopes:
+            profile.name: given_name, family_name, middle_name
+            profile.titles: title_prefix and title_suffix
+            profile.gender: gender
+            profile.birthdate: birthdate, age and date_of_death
+            profile.birthnumber: birthnumber
+            profile.birthplaceNationality: birthplace, birthcountry, primary_nationality and nationalities
+            profile.maritalstatus: maritalstatus
+            profile.addresses:
+              addresses.type, addresses.street, addresses.buildingapartment,
+              addresses.streetnumber, addresses.evidencenumber, addresses.city,
+              addresses.cityarea, addresses.zipcode, addresses.country and addresses.ruian_reference
+            profile.idcards: idcards.type, idcards.description, idcards.country,
+              idcards.number, idcards.valid_to, idcards.issuer and idcards.issue_date
+            profile.paymentAccounts: paymentAccounts, paymentAccountsDetails
+            profile.email: email
+            profile.phonenumber: phone_number
+            profile.updatedat: updated_at
+            profile.legalstatus: majority, pep, limited_legal_capacity
+            notification.claims_updated: The application wants to send notifications
+            sign.qualified: Bank iD needs to get data for Qualified certificate.
+            sign.officially_certified: Bank iD needs to get data for Qualified certificate.
+            service: CSC 2.0 scope for authorization of rQES
+            credential: CSC 2.0 scope for authorization of used credential
+    Bearer:
+      description: |
+        For accessing the API a valid JWT token must be passed in all the queries in
+        the 'Authorization' header.
+
+        The following syntax must be used in the 'Authorization' header :
+
+            `Bearer: xxxxxx.yyyyyyy.zzzzzz`
+
+      type: apiKey
+      name: Authorization
+      in: header
+
+  responses:
+    TokenErrorResponse:
+      description: Request invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenErrorResponse'
+          example:
+            error: 'invalid_request'
+            error_description: 'Missing required token parameter'
+      headers:
+        traceId:
+          description: Unique ID for each API call for support purposes.
+          schema:
+            $ref: '#/components/schemas/traceId'
+
+    TokenErrorResponseInvalidClient:
+      description: Request invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenErrorResponse'
+          example:
+            error: 'invalid_client'
+            error_description: 'Client authentication failed'
+      headers:
+        traceId:
+          description: Unique ID for each API call for support purposes.
+          schema:
+            $ref: '#/components/schemas/traceId'
+
+    TokenErrorResponseBadCredentials:
+      description: Request invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TokenErrorResponse'
+          example:
+            error: 'invalid_client'
+            error_description: 'Bad client credentials'
+      headers:
+        traceId:
+          description: Unique ID for each API call for support purposes.
+          schema:
+            $ref: '#/components/schemas/traceId'
+
+    UnauthorizedError:
+      description: Access token is missing or invalid
+      headers:
+        traceId:
+          description: Unique ID for each API call for support purposes.
+          schema:
+            $ref: '#/components/schemas/traceId'
+        WWW-Authenticate:
+          description: '[RFC6750](https://tools.ietf.org/html/rfc6750#section-3.1) `invalid_request`, `invalid_token`, `insufficient_scope`'
+          schema:
+            $ref: '#/components/schemas/WWW-Authenticate'
+
+    RequestInvalidError:
+      description: Request invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RequestInvalidError'
+      headers:
+        traceId:
+          description: Unique ID for each API call for support purposes.
+          schema:
+            $ref: '#/components/schemas/traceId'
+
+    TooManyRequestError:
+      description: Corresponding client have sent too many request
+      headers:
+        RetryAfter:
+          description: Time period after which client can try request again
+          schema:
+            type: integer
+            format: uri
+          example: 3600
+        traceId:
+          schema:
+            $ref: '#/components/schemas/traceId'
+
+  examples:
+    userInfo:
+      value:
+        sub: 23f1ac00-5d54-4169-a288-794ae2ead0c4
+        txn: 6941683f-c6ee-410c-add0-d52d63091069:openid:profile.name:profile.gender
+        name: Jan Novák
+        given_name: Jan
+        family_name: Novák
+        gender: male
+        birthdate: '1970-08-01'
+        email: j.novak@email.com
+        zoneinfo: Europe/Prague
+        locale: cs_CZ
+        phone_number: '+420123456789'
+        updated_at: 1650887066
+
+    profile:
+      value:
+        sub: '23f1ac00-5d54-4169-a288-794ae2ead0c4'
+        txn: '6941683f-c6ee-410c-add0-d52d63091069:openid:profile.name:profile.addresses'
+        verified_claims:
+          verification:
+            trust_framework: cz_aml
+            time: 2020-02-09T18:43:26.000Z
+            verification_process: '45244782'
+        given_name: 'Jan'
+        family_name: 'Novák'
+        gender: 'male'
+        birthdate: '1970-08-01'
+        birthnumber: '7008010147'
+        age: 50
+        majority: true
+        date_of_death: null
+        birthplace: 'Praha 4'
+        birthcountry: 'CZ'
+        primary_nationality: 'CZ'
+        nationalities: [ 'CZ', 'AT', 'SK' ]
+        maritalstatus: 'MARRIED'
+        email: 'J.novak@email.com'
+        phone_number: '+420123456789'
+        pep: false
+        limited_legal_capacity: false
+        addresses:
+          - type: 'PERMANENT_RESIDENCE'
+            street: 'Olbrachtova'
+            buildingapartment: '1929'
+            streetnumber: '62'
+            evidencenumber: '21a'
+            city: 'Praha'
+            cityarea: 'Krč'
+            zipcode: '14000'
+            country: 'CZ'
+            ruian_reference: '14458921'
+        idcards:
+          - type: 'ID'
+            description: 'Občanský průkaz'
+            country: 'CZ'
+            number: '123456789'
+            valid_to: '2023-10-11'
+            issuer: 'Úřad městské části Praha 4'
+            issue_date: '2020-01-28'
+        paymentAccounts:
+          - CZ0708000000001019382023
+        paymentAccountsDetails:
+          - iban: CZ0708000000001019382023
+            currency: CZK
+        updated_at: 1650887066
+
+    userInfoJWT:
+      value: ewoidHlwIjoiVXNlcmluZm8iLAoiYWxnIjoiSFMyNTYiCn0K. ewoic3ViIjogIjIzZjFhYzAwLTVkNTQtNDE2OS1hMjg4LTc5NGFlMmVhZDBjNCIsCiJuYW1lIjogIkphbiBOb3bDoWsiLAoiZ2l2ZW5fbmFtZSI6ICJKYW4iLAogIAkiZmFtaWx5X25hbWUiOiAiTm92w6FrIiwKICAJIm1pZGRsZV9uYW1lIjogIiIsCiAgCSJuaWNrbmFtZSI6ICJab3JybyIsCiAgCSJwcmVmZXJyZWRfdXNlcm5hbWUiOiAiSmFuIiwKIAkiZW1haWwiOiAiSi5ub3Zha0BlbWFpbC5jb20iLAogIAkiZW1haWxfdmVyaWZpZWQiOiB0cnVlLAogIAkiZ2VuZGVyIjogIm1hbGUiLAogIAkiYmlydGhkYXRlIjogIjE5NzAtMDgtMDEiLAogIAkiem9uZWluZm8iOiAiRXVyb3BlL1ByYWd1ZSIsCiAgCSJsb2NhbGUiOiAiY3NfQ1oiLAogIAkicGhvbmVfbnVtYmVyIjogIis0MjAxMjM0NTY3ODkiLAogIAkicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjogZmFsc2UsCiAidXBkYXRlZF9hdCI6IDE1NjgxODg0MzMwMDAKfQo=. cDEuITlDHi14RUEGG3cxEWoXFzZWIG46JmMWZu+/vXImNBh0QUXlgq07xbYWYzF2biUl77+9dXZ2XAEjbFg1fgEDKRXYrgUuCm8kWzNKHgQKIARNPhIBMHlbMtS9O0FmZRl5I31w07FdPC4ndUVkRBd6Dj4nWmEKe9aHHjFgAxFIUTI8bgFbPfK6lbcXLFZsWVZpKBw0MmlUPQFw
+definitions:
+  CredentialMetadataObject:
+    type: object
+    properties:
+      credential_issuer:
+        type: string
+      authorization_servers:
+        type: array
+      credential_endpoint:
+        type: string
+      deferred_credential_endpoint:
+        type: string
+      notification_endpoint:
+        type: string
+      display:
+        $ref: '#/components/schemas/Display'
+      credential_configurations_supported:
+        type: object
+        format:
+          type: string
+        scope:
+          type: string
+        cryptographic_binding_methods_supported:
+          type: array
+        proof_types_supported:
+          type: object
+          properties:
+            jwt:
+              type: object
+              properties:
+                proof_signing_alg_values_supported:
+                  type: array

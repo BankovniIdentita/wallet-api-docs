@@ -1,0 +1,60 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+participant ServiceProvider
+participant Browser
+participant WalletAPI
+participant EUDIW
+participant MobileBrowser
+
+alt Auth endpoint GET usage
+  ServiceProvider --> Browser: 302 /auth
+  activate Browser
+    Browser -> WalletAPI: GET /auth
+    activate WalletAPI
+      return 302 /login
+    Browser -> WalletAPI: /login
+    activate WalletAPI
+      return login page with QR code / link
+    loop UserAgent polling
+      Browser -> WalletAPI: /status
+      activate WalletAPI
+        return status
+     end
+  deactivate Browser
+
+end
+activate EUDIW
+EUDIW -> EUDIW: Scan QR code
+EUDIW -> EUDIW: get consent and prepare VP and SIOPv2 response
+opt DIRECT POST
+  EUDIW -> WalletAPI: POST /callback
+  activate WalletAPI
+    return redirectUri
+end
+  EUDIW -> MobileBrowser **: 302 redirectUri
+  activate MobileBrowser
+    MobileBrowser -> WalletAPI: GET redirectUri
+    activate WalletAPI
+      return Thank you page   
+activate Browser
+Browser -> Browser: auth status = DONE 
+Browser -> WalletAPI: GET /authResult
+activate WalletAPI
+  return 302 original auth link
+Browser -> WalletAPI: GET original auth link
+activate WalletAPI
+  return 302 original callback uri with code
+Browser -> ServiceProvider: GET callback uri with code
+deactivate Browser
+activate ServiceProvider
+  ServiceProvider -> WalletAPI: /token
+  activate WalletAPI
+   return TokenResponse
+  ServiceProvider -> WalletAPI: /userinfo
+  activate WalletAPI
+    return UserInfoResponse with custom claims
+  
+@enduml
+  
