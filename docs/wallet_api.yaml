@@ -310,11 +310,11 @@ paths:
       description: |
         API used by Wallet for returning presentations in HTTP GET flavor. 
         Returns callback url for user-agent redirection
-
       parameters:
         - $ref: '#/components/parameters/callback_vp_token'
         - $ref: '#/components/parameters/callback_id_token'
         - $ref: '#/components/parameters/callback_presentation_submission'
+        - $ref: '#/components/parameters/auth_state'
       responses:
         '302':
           description: |
@@ -1399,7 +1399,12 @@ components:
       in: query
       required: true
       name: scope
-      description: OpenID Connect requests MUST contain the openid scope value. If the openid scope value is not present, the behavior is entirely unspecified. Other scope values MAY be present. Scope values used that are not understood by an implementation SHOULD be ignored. See Sections 5.4 and 11 for additional scope values defined by this specification.
+      description: >-
+        OpenID Connect requests SHOULD contain the openid scope value. 
+        If the openid scope value is not present, id_token will not be returned and userinfo will not return sub claim. 
+        Other scope values MAY be present. 
+        Scope values used that are not understood by an implementation SHOULD be ignored. 
+        See Sections 5.4 and 11 for additional scope values defined by this specification.
       schema:
         type: string
         example: 'openid profile.name profile.addresses'
@@ -1529,7 +1534,7 @@ components:
       in: query
       description: >-
         Maximum possible Authentication Age. Specifies the allowable elapsed time in seconds since the last time the OP 
-        actively authenticated the End-User.
+        actively authenticated the End-User. Default value is 600 seconds.
 
         This parameter is not intended to request the length of validity of issued tokens. Currently, some IDPs do not 
         support this parameter, and the current authentication validity period is limited only by the validity of the tokens.
@@ -2568,6 +2573,8 @@ components:
           $ref: '#/components/parameters/callback_id_token'
         presentation_submission:
           $ref: '#/components/parameters/callback_presentation_submission'
+        state:
+          $ref: '#/components/parameters/auth_state'
 
     wallet_post_jwt_callback:
       description: Response form Wallet in direct_post mode

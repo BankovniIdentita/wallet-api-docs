@@ -32,7 +32,7 @@ For Wallet integration:
 - SD-JWT for issuance
 - High Assurance profile for OIDC4VC
 
-## Funcinality and Protocols in progress
+## Funcionality and Protocols in progress
 
 
 QEAA Issuer
