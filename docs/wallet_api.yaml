@@ -631,7 +631,7 @@ paths:
         - profile.legalstatus (majority, pep, limited_legal_capacity)
 
         Technical scopes:
-        - openid (always required scope)
+        - openid
         - offline_access (the scope must be specified if a refresh_token release is required)
         - notification.claims_updated (notification service)
 
@@ -1071,7 +1071,7 @@ paths:
         This request authenticates the user and returns tokens to the client application as a part of the callback response.
 
         **Technical scopes** (used in the `scope` query parameter):
-        - openid (always required scope)  
+        - openid  
         - offline_access (the scope must be specified if a refresh_token release is required)
 
       tags:
@@ -3900,7 +3900,7 @@ components:
     userInfo:
       value:
         sub: 23f1ac00-5d54-4169-a288-794ae2ead0c4
-        txn: 6941683f-c6ee-410c-add0-d52d63091069:openid:profile.name:profile.gender
+        txn: 6941683f-c6ee-410c-add0-d52d63091069
         name: Jan Novák
         given_name: Jan
         family_name: Novák
@@ -3915,7 +3915,7 @@ components:
     profile:
       value:
         sub: '23f1ac00-5d54-4169-a288-794ae2ead0c4'
-        txn: '6941683f-c6ee-410c-add0-d52d63091069:openid:profile.name:profile.addresses'
+        txn: '6941683f-c6ee-410c-add0-d52d63091069'
         verified_claims:
           verification:
             trust_framework: cz_aml
