@@ -3,8 +3,10 @@
 
 autonumber
 
-participant DrivingApplication
+participant RelayingParty
 participant User
+participant WalletAPI
+
 participant SignatureInteractionComponent
 participant EUDIW
 participant AuthorizationServer
@@ -61,10 +63,12 @@ deactivate EUDIW
 deactivate CertificateIssuer
 end
 
-note right of DrivingApplication: We assume that Service Provider will not make document available for EUDIW 
-activate DrivingApplication
-DrivingApplication -> DrivingApplication: Display documents
-DrivingApplication -> AuthorizationServer: CSC 2.0 /csc/v2/oauth2/authorize
+note right of RelayingParty: We assume that Service Provider will not make document available for EUDIW
+activate RelayingParty
+RelayingParty -> RelayingParty: Display documents
+RelayingParty -> WalletAPI: /oauth2/authorize with CSC 2.0 scope service and authorization details
+activate WalletAPI
+WalletAPI -> AuthorizationServer: CSC 2.0 /csc/v2/oauth2/authorize
 note left
   Create authorization request for signing
 end note
@@ -90,11 +94,11 @@ end note
   EUDIW -> AuthorizationServer: /direct_post.jwt with presentations
   activate AuthorizationServer
     return thankyou
- AuthorizationServer -> DrivingApplication: /callback with code 
- DrivingApplication -> AuthorizationServer: /token
+ AuthorizationServer -> WalletAPI: /callback with code
+ WalletAPI -> AuthorizationServer: /token
  activate AuthorizationServer
   return access_token + SAD
-DrivingApplication -> SSA: /csc/v2/signatures/signDoc
+WalletAPI -> SSA: /csc/v2/signatures/signDoc
   activate SSA
     SSA -> QTSP: get qualified certificate 
       activate QTSP

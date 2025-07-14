@@ -5,6 +5,8 @@ info:
   description: |
     Describes APIs to be implemented by Bank iD.
 
+    * Version 1.1.0
+      * updated documentation incorporating findings from POTENTIAL piloting
     * Version 1.0.0
       * the first version of the document for POC purposes
     </details>
@@ -148,6 +150,8 @@ paths:
         - $ref: '#/components/parameters/auth_max_age'
         - $ref: '#/components/parameters/auth_response_mode'
         - $ref: '#/components/parameters/auth_ui_locales'
+        - $ref: '#/components/parameters/auth_credential_format'
+        - $ref: '#/components/parameters/auth_wallet_profile'
 
       callbacks:
         Login-Flow-Success:
@@ -312,8 +316,6 @@ paths:
         Returns callback url for user-agent redirection
       parameters:
         - $ref: '#/components/parameters/callback_vp_token'
-        - $ref: '#/components/parameters/callback_id_token'
-        - $ref: '#/components/parameters/callback_presentation_submission'
         - $ref: '#/components/parameters/auth_state'
       responses:
         '302':
@@ -337,7 +339,10 @@ paths:
                     code=123456
                     &state=jdpi9hu1HH
     post:
-      description: API used by Wallet for returning presentations in HTTP POST flavor. Used for direct_post and direct_post.jwt mode
+      description: >-
+        API used by Wallet for returning presentations in HTTP POST flavor. 
+        Used for direct_post and direct_post.jwt mode. This API is implemented only by wallet. 
+        It is described is this documents only for completeness of documentation.
       tags:
         - Wallet Callback
       requestBody:
@@ -1555,6 +1560,32 @@ components:
       schema:
         type: string
         example: 'fr-CA.UTF-8'
+    auth_credential_format:
+      name: credential_format
+      in: query
+      description: >- 
+        Requested format of credentials to be retrieved from  Wallet. This is only supported in development and will be removed in final version
+      schema:
+        type: string
+        enum:
+          - SD_JWT
+          - MDOC
+          - ANY
+    auth_wallet_profile:
+      name: profile
+      in: query
+      description: >-
+        Request profile of OpenID for Verifiable Credentials. This is only supported in development and LSP testing. Will be removed for production environment.
+      schema:
+        type: string
+    auth_authorization_details:
+      name: authorization_details
+      in: query
+      description: >-
+        URL encoded JSON that contains authorization details object with defined structure (Payments, Document Signature). 
+        This object is then propagated to Wallet via transaction_data flield in OpenID 4 VP specs.
+      schema:
+        type: string
     auth_id_token_hint:
       name: id_token_hint
       in: query
@@ -1870,6 +1901,10 @@ components:
           type: string
           format: JWT
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+        authorization_detail:
+          description: 'Processed transaction data passed to Wallet API in /auth request. Same encoded JSON as string is returned here as result of authorization in Wallet'
+          type: string
+          format: encodedJson
     AccessTokenCSCResponse:
       description:
         The authorization server issues an access token and optional refresh token, and constructs the response by adding the following parameters
@@ -2229,14 +2264,11 @@ components:
         - $ref: '#/components/schemas/birthcountry'
         - $ref: '#/components/schemas/primary_nationality'
         - $ref: '#/components/schemas/nationalities'
-        - $ref: '#/components/schemas/maritalstatus'
         - $ref: '#/components/schemas/addresses'
         - $ref: '#/components/schemas/idcards'
         - $ref: '#/components/schemas/email'
         - $ref: '#/components/schemas/phone_number'
-        - $ref: '#/components/schemas/pep'
         - $ref: '#/components/schemas/limited_legal_capacity'
-        - $ref: '#/components/schemas/paymentAccounts'
         - $ref: '#/components/schemas/updated_at'
       example:
         name: 'Jan Novák'
@@ -2266,14 +2298,11 @@ components:
         - $ref: '#/components/schemas/birthcountry'
         - $ref: '#/components/schemas/primary_nationality'
         - $ref: '#/components/schemas/nationalities'
-        - $ref: '#/components/schemas/maritalstatus'
         - $ref: '#/components/schemas/addresses'
         - $ref: '#/components/schemas/idcards'
         - $ref: '#/components/schemas/email'
         - $ref: '#/components/schemas/phone_number'
         - $ref: '#/components/schemas/pep'
-        - $ref: '#/components/schemas/limited_legal_capacity'
-        - $ref: '#/components/schemas/paymentAccounts'
         - $ref: '#/components/schemas/updated_at'
       example:
         given_name: Jan
@@ -2541,26 +2570,18 @@ components:
           $ref: '#/components/schemas/primary_nationality'
         nationalities:
           $ref: '#/components/schemas/nationalities'
-        maritalstatus:
-          $ref: '#/components/schemas/maritalstatus'
         addresses:
           $ref: '#/components/schemas/addresses'
         idcards:
           $ref: '#/components/schemas/idcards'
-        email:
-          $ref: '#/components/schemas/email'
-        phone_number:
-          $ref: '#/components/schemas/phone_number'
-        pep:
-          $ref: '#/components/schemas/pep'
         limited_legal_capacity:
           $ref: '#/components/schemas/limited_legal_capacity'
-        paymentAccounts:
-          $ref: '#/components/schemas/paymentAccounts'
-        paymentAccountsDetails:
-          $ref: '#/components/schemas/paymentAccountsDetails'
         updated_at:
           $ref: '#/components/schemas/updated_at'
+        raw:
+          type: object
+          description: >- 
+            Contains raw claims in "namespace" : { } structure, containing raw claims included in presentation of credential under that namespace
       required:
         - sub
         - txn
@@ -2569,18 +2590,16 @@ components:
       properties:
         vp_token:
           $ref: '#/components/parameters/callback_vp_token'
-        id_token:
-          $ref: '#/components/parameters/callback_id_token'
-        presentation_submission:
-          $ref: '#/components/parameters/callback_presentation_submission'
         state:
           $ref: '#/components/parameters/auth_state'
 
     wallet_post_jwt_callback:
       description: Response form Wallet in direct_post mode
       properties:
-        response:
-          description: JWT containing wallet_post_callback parameters.
+        body:
+          type: string
+          description: Encrypted JWT (but nott Signed!) containing wallet_post_callback parameters.
+
     profile:
       description: Provide detailed information about user
       properties:
