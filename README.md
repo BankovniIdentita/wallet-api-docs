@@ -9,7 +9,7 @@ Not all functionality may be supported. Please consult us via issue or Discord b
 Should you find any bug or inconsistency please create issue in repo.
 Should you have any request for functionality please create issue in repo.
 
-You can also contact us by Discord https://discord.gg/M6brtGYR
+You can also contact us by Discord https://discord.gg/XnK7yvHD
 
 ## Structure
 Docs has following parts:

@@ -1,6 +1,7 @@
 # Wallet API documentation
 ## History 
-Version: 0.0.1 - Filip's first notices
+- Version: 0.0.2 - Update API based on experiences from LSPs 
+- Version: 0.0.1 - Filip's first notices
 ## Introduction
 Wallet API is new specific component developed by Bank iD for integration of Wallet functionality
 for Czech market. This documentation for now describes only functionality required for POTENTIAL POC 
@@ -19,46 +20,79 @@ This endpoint provides information about OpenID Connect configuration.
 **GET** `/.well-known/oauth-authorization-server`
 
 ```json
+
 {
-  "issuer": "https://idp.example.com",
-  "authorization_endpoint": "https://idp.example.com/auth",
-  "token_endpoint": "https://idp.example.com/token",
-  "userinfo_endpoint": "https://idp.example.com/userinfo",
-  "jwks_uri": "https://idp.example.com/.well-known/jwks",
-  "registration_endpoint": "https://idp.example.com/register",
-  "scopes_supported": ["openid", "profile.email"],
-  "response_types_supported": ["code"],
-  "response_modes_supported": ["query"],
-  "grant_types_supported": ["authorization_code", "refresh_token"],
-  "acr_values_supported": ["string"],
-  "subject_types_supported": ["pairwise"],
-  "id_token_signing_alg_values_supported": ["PS512"],
-  "id_token_encryption_alg_values_supported": ["A256GCM"],
-  "id_token_encryption_enc_values_supported": ["A256GCM"],
-  "userinfo_signing_alg_values_supported": ["PS512"],
-  "userinfo_encryption_alg_values_supported": ["A256GCM"],
-  "userinfo_encryption_enc_values_supported": ["A256GCM"],
-  "profile_signing_alg_values_supported": ["PS512"],
-  "profile_encryption_alg_values_supported": ["A256GCM"],
-  "profile_encryption_enc_values_supported": ["A256GCM"],
-  "request_object_signing_alg_values_supported": ["PS512"],
-  "request_object_encryption_alg_values_supported": ["A256GCM"],
-  "request_object_encryption_enc_values_supported": ["A256GCM"],
-  "token_endpoint_auth_methods_supported": ["private_key_jwt"],
-  "token_endpoint_auth_signing_alg_values_supported": ["PS512"],
-  "display_values_supported": ["page"],
-  "service_documentation": "https://idp.example.com/docs",
-  "claims_locales_supported": ["en-CA", "en"],
-  "ui_locales_supported": ["cs", "en-US", "en"],
-  "claims_parameter_supported": false,
-  "request_parameter_supported": false,
-  "request_uri_parameter_supported": true,
-  "require_request_uri_registration": false,
-  "op_policy_uri": "https://idp.example.com/policy",
-  "op_tos_uri": "https://idp.example.com/tos",
-  "backchannel_logout_supported": true,
-  "claims_supported": ["string"]
+  "issuer": "https://wallet.stage.bankid.cz",
+  "authorization_endpoint": "https://wallet.stage.bankid.cz/oauth2/authorize",
+  "pushed_authorization_request_endpoint": "https://wallet.stage.bankid.cz/oauth2/par",
+  "device_authorization_endpoint": "https://wallet.stage.bankid.cz/oauth2/device_authorization",
+  "token_endpoint": "https://wallet.stage.bankid.cz/oauth2/token",
+  "token_endpoint_auth_methods_supported": [
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ],
+  "jwks_uri": "https://wallet.stage.bankid.cz/oauth2/jwks",
+  "userinfo_endpoint": "https://wallet.stage.bankid.cz/userinfo",
+  "end_session_endpoint": "https://wallet.stage.bankid.cz/connect/logout",
+  "response_types_supported": [
+    "code"
+  ],
+  "grant_types_supported": [
+    "authorization_code",
+    "client_credentials",
+    "refresh_token",
+    "urn:ietf:params:oauth:grant-type:device_code",
+    "urn:ietf:params:oauth:grant-type:token-exchange"
+  ],
+  "revocation_endpoint": "https://wallet.stage.bankid.cz/oauth2/revoke",
+  "revocation_endpoint_auth_methods_supported": [
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ],
+  "introspection_endpoint": "https://wallet.stage.bankid.cz/oauth2/introspect",
+  "introspection_endpoint_auth_methods_supported": [
+    "client_secret_basic",
+    "client_secret_post",
+    "client_secret_jwt",
+    "private_key_jwt",
+    "tls_client_auth",
+    "self_signed_tls_client_auth"
+  ],
+  "code_challenge_methods_supported": [
+    "S256"
+  ],
+  "tls_client_certificate_bound_access_tokens": true,
+  "dpop_signing_alg_values_supported": [
+    "RS256",
+    "RS384",
+    "RS512",
+    "PS256",
+    "PS384",
+    "PS512",
+    "ES256",
+    "ES384",
+    "ES512"
+  ],
+  "subject_types_supported": [
+    "public"
+  ],
+  "id_token_signing_alg_values_supported": [
+    "RS256"
+  ],
+  "scopes_supported": [
+    "openid"
+  ],
+  "registration_endpoint": "https://wallet.stage.bankid.cz/connect/register"
 }
+
 ```
 ## JWK Keys Discovery API
 
@@ -101,18 +135,22 @@ GET /oatuh2/authorize?
   &response_type=code
   &state=1234
   &scope=openid%20profile.name%20profile.gender
-Host: somebank.cz
+Host: wallet.stage.bankid.cz
 ```
-Valid auth request is processed into SIOPv2 request and depending on scopes following is done:
-- if scope is sub only, response type for SIOPv2 is id_token
-- otherwise response type for SIOPv2 is id_token vp_token and scopes are tranformed into Presentation definition
+
+Valid auth request is processed into OpenID4VP request and depending on scopes following is done:
+- scopes are transform one of two ways:
+  - if bankid scopes are used, scopes are validated against registered scopes
+  - if wallet scopes are used (form namespace:claim), scopes are not validated and are directly processed
+- Please note that combining bankid scopes and wallet scopes is not supported right now
+- after validation scopes are transformed into DCQL (or temporarily for LSPs Presentation Defintion, depends on profile used in auth request)
   - also signed JWT is created for request with identifier
 
 ### Response redirection:
 
 ```http
 HTTP/1.1 302 Found
-Location: https://bankid.cz/callback?
+Location: https://service-provider.cz/callback?
   code=6a72a932a67cf859570a8fb986dcefce19c844995d30fe1ad32d1e5af5579eb2
   &state=1234
 ```
@@ -175,9 +213,73 @@ Pragma: no-cache
   "error_description": "The request is missing a required parameter"
 }
 ```
-
 ---
-# Internal logic
 
-## Create SIOPv2 auth request 
-Internal API 
+## GET /userinfo 
+Userinfo endpoint is used to retrieve information send by Wallet to backend. 
+Backend processes returned vp_token with disclosed presentations and transforms it to plain JSON structure. 
+You may get the complete vp_token details from the `/vptoken` endpoint.
+Authenticated by access_token from token endpoint.
+Please note that currently endpoint does not returns data as signed or encrypted JWT opposed to current Bank iD interface
+
+```http
+GET /userinfo HTTP/2
+Host: bankid.cz
+Accept: application/json
+Authorization: Bearer c03e997c-aa96-4b3f-ad0c-98626833145d
+```
+
+### Response 200 OK
+Returns Userinfo response with data. 
+```http
+HTTP/2 200 OK
+Content-Type: application/json;charset=utf-8
+
+
+{
+  "given_name": "Bernd",
+  "family_name": "Abt",
+  "raw": {
+    "eu.europa.ec.eudi.pid.1": {
+      "given_name": "Bernd",
+      "family_name": "Abt"
+    }
+  },
+  "sub": "dummy",
+  "txn": "52be9ce4-c16e-4b72-aaaf-549e1c75849d"
+}
+```
+
+### Response 400
+```html
+HTTP/2 400 Bad Request
+Content-Type: application/json;charset=utf-8
+Cache-Control: no-store
+Pragma: no-cache
+
+{
+  "error": "invalid_request",
+  "error_description": "The request is missing a required parameter"
+}
+```
+
+## GET /vptoken
+Returns decrypted presentations as JSON array, each element contains sigle presentation in mdoc or SD-JWT format. 
+Authenticated by access_token from token endpoint. 
+
+```http
+GET /vptoken HTTP/2
+Host: bankid.cz
+Accept: application/json
+Authorization: Bearer c03e997c-aa96-4b3f-ad0c-98626833145d
+```
+### Response 200 OK
+Returns Userinfo response with data.
+```http
+HTTP/2 200 OK
+Content-Type: application/json;charset=utf-8
+
+[ "eyJ... ",
+  "o2d2ZXJzaW9uYzEuMGlk..."
+]
+```
