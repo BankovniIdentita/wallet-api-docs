@@ -24,31 +24,31 @@ On Relaying party:
 - OpenID Connect Dynamic Client Registration
 - OpenID Connect Session Management
 - OAuth 2.0 Authorization Server Metadata
+- OAuth2 Pushed Authorization Request
 
 For Wallet integration:
-- OpenID4VCI draft 14
-- OpenID4VP draft 21
+- OpenID4VCI draft 15
+- OpenID4VP draft 21,24,28 (selectable by variable)
 - Iso 18013:5 extension for OpenID4VP
 - SD-JWT for issuance
 - High Assurance profile for OIDC4VC
+- High Assurance profile for OIDC4VP
 
+Please note that Presentation definition is supported only in OpenIDVP draft 21 and 24, and will be removed in near future. 
 ## Funcionality and Protocols in progress
-
 
 QEAA Issuer
 
 Relaying party
 - OAuth2 Rich Authorization Request
-- OAuth2 Pushed Authorization Request
 - CSC 2.0 API
 - QES resolution between Wallet Centric and QTSP model
 - Proof Key for Code Exchange by OAuth Public Clients (PKCE)
 
 Wallet integration:
+- Transaction data in OpenID4VP (Document Signature, Payments)
 - Wallet centric QES
 - QTSP centric QES
-- SD-JWT for verfier
-- 
  
 
 
