@@ -1,0 +1,348 @@
+openapi: 3.1.0
+info:
+  title: OpenID for Verifiable Credential Issuance API
+  description: |
+    This API is based on the [OpenID for Verifiable Credential Issuance](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) specification (version 1.0).
+  version: 1.0.0
+servers:
+  - url: 'https://issuer.example.com'
+paths:
+  /.well-known/openid-credential-issuer/{issuer_id}:
+    get:
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      summary: Credential Issuer Metadata
+      description: Returns the metadata of the Credential Issuer.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialIssuerMetadata'
+
+  /{issuer_id}/credential:
+    post:
+      summary: Credential Endpoint
+      description: The Credential Endpoint is used to request a Credential.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialResponse'
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /{issuer_id}/deferred_credential:
+    post:
+      summary: Deferred Credential Endpoint
+      description: The Deferred Credential Endpoint is used to request a Credential that was not immediately available.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeferredCredentialRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialResponse'
+        '202':
+          description: Deferred issuance still pending
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transaction_id:
+                    type: string
+                  interval:
+                    type: integer
+                required:
+                  - transaction_id
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /{issuer_id}/nonce:
+    post:
+      summary: Nonce Endpoint
+      description: The Nonce Endpoint is used to obtain a c_nonce.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  c_nonce:
+                    type: string
+                  c_nonce_expires_in:
+                    type: integer
+                required:
+                  - c_nonce
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    CredentialIssuerMetadata:
+      type: object
+      required:
+        - credential_issuer
+        - credential_endpoint
+        - credential_configurations_supported
+      properties:
+        credential_issuer:
+          type: string
+          format: uri
+        authorization_servers:
+          type: array
+          items:
+            type: string
+        credential_endpoint:
+          type: string
+          format: uri
+        nonce_endpoint:
+          type: string
+          format: uri
+        deferred_credential_endpoint:
+          type: string
+          format: uri
+        notification_endpoint:
+          type: string
+          format: uri
+        credential_request_encryption:
+          type: object
+          properties:
+            jwks:
+              type: object
+            enc_values_supported:
+              type: array
+              items:
+                type: string
+            zip_values_supported:
+              type: array
+              items:
+                type: string
+            encryption_required:
+              type: boolean
+        credential_response_encryption:
+          type: object
+          properties:
+            alg_values_supported:
+              type: array
+              items:
+                type: string
+            enc_values_supported:
+              type: array
+              items:
+                type: string
+            zip_values_supported:
+              type: array
+              items:
+                type: string
+            encryption_required:
+              type: boolean
+        batch_credential_issuance:
+          type: object
+          properties:
+
+            batch_size:
+              type: int
+        credential_configurations_supported:
+          type: array
+          items:
+            $ref: '#/components/schemas/CredentialConfigurationSupported'
+
+    CredentialConfigurationSupported:
+      type: object
+      required:
+        - format
+      properties:
+        format:
+          type: string
+        scope:
+          type: string
+        docType:
+          type: string
+        vct:
+          type: string
+        cryptographic_binding_methods_supported:
+          type: array
+          items:
+            type: string
+        credential_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        proof_types_supported:
+          $ref: "#/components/schemas/ProofTypesSupported"
+
+        credential_metadata:
+          type: object
+          properties:
+            display:
+              type: array
+              items:
+                $red: '#/components/schemas/CredentialDisplay'
+            claims:
+              type: array
+              items:
+                type: string
+
+
+    CredentialDisplay:
+      type: object
+      properties:
+        name:
+          type: string
+
+    CredentialRequest:
+      type: object
+      oneOf:
+        - required: [ credential_configuration_id ]
+        - required: [ credential_identifier ]
+      properties:
+        credential_configuration_id:
+          type: string
+        credential_identifier:
+          type: string
+        proofs:
+          type: array
+          items:
+            $ref: '#/components/schemas/Proof'
+
+    Proof:
+      type: object
+      required:
+        - proof_type
+      properties:
+        proof_type:
+          type: string
+          enum:
+            - jwt
+            - ldp_vp
+        jwt:
+          type: string
+        ldp_vp:
+          type: object
+
+    ProofTypesSupported:
+      type: object
+      properties:
+        jwt:
+          type: object
+          properties:
+            proof_signing_alg_values_supported:
+              type: array
+              items:
+                type: string
+        key_attestations_required:
+          type: object
+          properties:
+            key_storage:
+              type: array
+              items:
+                type: string
+            user_authentication:
+              type: array
+              items:
+                type: string
+
+    CredentialResponse:
+      type: object
+      properties:
+        credentials:
+          type: array
+          items:
+            type: object
+            properties:
+              credential:
+                oneOf:
+                  - type: string
+                  - type: object
+              format:
+                type: string
+              notification_id:
+                type: string
+              transaction_id:
+                type: string
+        notification_id:
+          type: string
+        transaction_id:
+          type: string
+        c_nonce:
+          type: string
+        c_nonce_expires_in:
+          type: integer
+
+    DeferredCredentialRequest:
+      type: object
+      required:
+        - transaction_id
+      properties:
+        transaction_id:
+          type: string
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string
+
