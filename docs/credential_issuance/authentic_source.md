@@ -69,5 +69,5 @@ Plase note that if data from authentic source are insufficient for issuance, iss
 
 # Final note
 This is preliminary documentation for PoC and testing WE BUILD and APTITUDE consortia as well as implementation partners. 
-This is not final version and implmentation might be ahead of specification. In such case let us know by creating issue or email to 
+This is not final version and implementation might be ahead of specification. In such case let us know by creating issue or email to 
 [filip-hladky](mailto:filip@bankid.cz)
