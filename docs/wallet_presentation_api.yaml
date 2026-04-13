@@ -523,6 +523,31 @@ paths:
               example:
                 status: DONE
                 state: 'ab123456'
+  /result:
+    get:
+      summary: Result API for browser/Sep to authorize session in Wallet
+      description: |
+        Result endpoint is custom endpoint for browser and server-side request for confirming and 
+        binding of authorization request in Wallet API with data from Wallet. Returns redirect to original auth request that if conditions are met, is authorized.
+      tags:
+        - Polling
+      parameters:
+        - $ref: '#/components/parameters/auth_client_id'
+        - $ref: '#/components/parameters/auth_state'
+      responses:
+        '302':
+          description: Valid response
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+            localtion:
+              description: URL to follow redirect
+              schema:
+                type: string
+                format: uri
+
 
   /userinfo:
     get:

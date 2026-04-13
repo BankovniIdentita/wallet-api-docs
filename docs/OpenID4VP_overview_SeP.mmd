@@ -1,0 +1,64 @@
+sequenceDiagram
+    autonumber
+    participant ServiceProvider
+    participant WalletAPI
+    participant EUDIW
+    participant MobileBrowser
+
+    activate ServiceProvider
+    ServiceProvider->>WalletAPI: POST /pushed-auth
+    Note left of ServiceProvider: Pushed auth request
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: 200 PAR response
+    ServiceProvider ->> WalletAPI: GET /auth with request_id from PAR response
+    activate WalletAPI
+    WalletAPI -->> ServiceProvider: 302 /login
+    ServiceProvider ->> WalletAPI: /login?isApi=true
+    activate WalletAPI
+    WalletAPI -->> ServiceProvider: json with Wallet Request data
+    deactivate WalletAPI
+    ServiceProvider->>ServiceProvider: display QR code / link
+    loop ServiceProvider polling
+        ServiceProvider->>WalletAPI: /status
+        activate WalletAPI
+        WalletAPI-->>ServiceProvider: status
+        deactivate WalletAPI
+    end
+    deactivate ServiceProvider
+
+    activate EUDIW
+    EUDIW->>EUDIW: Scan QR code/Deeplik via ServiceProvider
+    EUDIW->>EUDIW: get consent and prepare VP response
+    opt DIRECT POST
+        EUDIW->>WalletAPI: POST /callback
+        activate WalletAPI
+        WalletAPI-->>EUDIW: redirectUri
+        deactivate WalletAPI
+    end
+    EUDIW-->>MobileBrowser: 302 thank-you
+    activate MobileBrowser
+    MobileBrowser->>WalletAPI: GET redirect to thank-you
+    activate WalletAPI
+    WalletAPI-->>MobileBrowser: Thank you page   
+    deactivate WalletAPI
+    deactivate MobileBrowser
+    deactivate EUDIW
+
+    activate ServiceProvider
+    ServiceProvider->>ServiceProvider: from polling auth status = DONE
+    ServiceProvider ->> WalletAPI: /result
+    activate WalletAPI
+    WalletAPI -->> ServiceProvider: 302 to auth url
+    ServiceProvider->>WalletAPI: GET auth link
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: 302 original callback uri with code
+    deactivate WalletAPI
+    ServiceProvider->>WalletAPI: /token
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: TokenResponse
+    deactivate WalletAPI
+    ServiceProvider->>WalletAPI: /userinfo
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: UserInfoResponse with custom claims
+    deactivate WalletAPI
+    deactivate ServiceProvider
