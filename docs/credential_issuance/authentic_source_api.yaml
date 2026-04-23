@@ -1,0 +1,69 @@
+openapi: 3.1.0
+info:
+  title: Title
+  description: Title
+  version: 1.0.0
+servers:
+  - url: 'https'
+paths:
+  /.well-known/authentic-source:
+    get:
+      summary: Get the credential authentic source
+      description: Returns defined endpoints for authentic source
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticSourceMetadata'
+  /retrieve:
+    get:
+      summary: Retrieve credential authentic source
+      description: Retrieve credential authentic source
+      security:
+        - BearerAuth: [ ]
+
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticSourceMetadata'
+components:
+  schemas:
+    AuthenticSourceMetadata:
+      type: object
+      properties:
+        authentic_source_url:
+          type: string
+          description: URL of the authentic source
+          example: https://authentic.example.com
+        retrieve_endpoint:
+          type: string
+          description: >-
+            Endpoint to retrieve credential from authentic source
+          example: https://authentic.example.com/retrieve
+
+    RetrieveResponse:
+      type: object
+      properties:
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attribute'
+
+
+    Attribute:
+      type: object
+      properties:
+        attribute_name:
+          type: string
+          description: Name of the attribute
+        attribute_value:
+          type: any
+          description: Value of the attribute
+
+
+
