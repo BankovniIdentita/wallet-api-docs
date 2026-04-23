@@ -456,7 +456,7 @@ paths:
         representing the meta information surrounding the token, including whether this token is currently active.
 
       security:
-        - AccessTokenAuth: []
+        - AccessTokenAuth: [ ]
       tags:
         - Token management
       requestBody:
@@ -579,7 +579,7 @@ paths:
         - notification.claims_updated (notification service)
 
       security:
-        - Bearer: []
+        - Bearer: [ ]
       tags:
         - User Info
       responses:
@@ -668,7 +668,7 @@ paths:
         - notification.claims_updated (notification service)
 
       security:
-        - Bearer: []
+        - Bearer: [ ]
       tags:
         - Identify
       responses:
@@ -1252,7 +1252,7 @@ components:
     auth_credential_format:
       name: credential_format
       in: query
-      description: >- 
+      description: >-
         Requested format of credentials to be retrieved from  Wallet. This is only supported in development and will be removed in final version
       schema:
         type: string
@@ -2269,7 +2269,7 @@ components:
           $ref: '#/components/schemas/updated_at'
         raw:
           type: object
-          description: >- 
+          description: >-
             Contains raw claims in "namespace" : { } structure, containing raw claims included in presentation of credential under that namespace
       required:
         - sub
@@ -2389,7 +2389,6 @@ components:
     OIDCConfiguration:
       description: >-
         It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
-      type: object
       required:
         - issuer
         - authorization_endpoint
@@ -2437,11 +2436,6 @@ components:
           format: uri
           description: URL of the OP's Authorize Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
           example: https://idp.example.com/authorize
-        verification_endpoint:
-          type: string
-          format: uri
-          description: URL of the OP's Verification Endpoint. This URL MUST use the https scheme and MAY contain port, path, and query parameter components.
-          example: https://idp.example.com/verification
         introspection_endpoint:
           type: string
           format: uri
@@ -2464,7 +2458,6 @@ components:
             type: string
             enum:
               - code
-              - token
           description: JSON array containing a list of the OAuth 2.0 response_type values that this OP supports. Dynamic OpenID Providers MUST support the code and the token Response Type values.
           example: [ code, token ]
         response_modes_supported:
@@ -2481,8 +2474,9 @@ components:
             type: string
             enum:
               - authorization_code
-              - implicit
+              - client_credentials
               - refresh_token
+              - urn:ietf:params:oauth:grant-type:token-exchange
           description: JSON array containing a list of the OAuth 2.0 Grant Type values that this OP supports. Dynamic OpenID Providers MUST support the authorization_code and implicit Grant Type values and MAY support other Grant Types. If omitted, the default value is ["authorization_code", "implicit"].
           example: [ 'authorization_code', 'refresh_token' ]
         acr_values_supported:
@@ -2499,19 +2493,17 @@ components:
           items:
             type: string
             enum:
-              - pairwise
               - public
           description: JSON array containing a list of the Subject Identifier types that this OP supports. Valid types include pairwise and public.
-          example: [ 'pairwise' ]
+          example: [ 'public' ]
         code_challenge_methods_supported:
           type: array
           items:
             type: string
             enum:
-              - plain
               - S256
           description: JSON array containing a list of Proof Key for Code Exchange (PKCE) [RFC7636] code challenge methods supported by this OP.
-          example: [ 'plain', 'S256' ]
+          example: [ 'S256' ]
         id_token_signing_alg_values_supported:
           allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
@@ -2556,6 +2548,10 @@ components:
               - private_key_jwt
               - client_secret_post
               - client_secret_jwt
+              - attest_jwt_client_auth
+              - client_secret_basic
+              - tls_client_auth
+              - self_signed_tls_client_auth
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Token Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
@@ -2571,6 +2567,10 @@ components:
               - private_key_jwt
               - client_secret_post
               - client_secret_jwt
+              - attest_jwt_client_auth
+              - client_secret_basic
+              - tls_client_auth
+              - self_signed_tls_client_auth
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Introspection Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
@@ -2578,17 +2578,6 @@ components:
         introspection_endpoint_auth_signing_alg_values_supported:
           allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Introspection Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Introspection endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
-        display_values_supported:
-          type: array
-          items:
-            type: string
-            enum:
-              - page
-              - popup
-              - touch
-          description: >-
-            JSON array containing a list of the display parameter values that the OpenID Provider supports.
-            These values are described in Section 3.1.2.1 of OpenID Connect Core 1.0 [OpenID.Core].
         service_documentation:
           type: string
           format: uri
@@ -2817,9 +2806,11 @@ components:
             not base64url-encoded) DER [ITU.X690.1994] PKIX certificate value. The PKIX certificate containing the key value MUST be the first
             certificate.  This MAY be followed by additional certificates, with each subsequent certificate being the one used to certify the
             previous one.  The key in the first certificate MUST match the public key represented by other members of the JWK.
-          type: string
-          format: uri
-          example: MIICUDCCAbmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJjejEOMAwGA1UECAwFUHJhaGExEDAOBgNVBAoMB0V4YW1wbGUxFDASBgNVBAMMC2V4YW1wbGUuY29tMB4XDTIwMDExNjE2NDExOFoXDTIxMDExNTE2NDExOFowRTELMAkGA1UEBhMCY3oxDjAMBgNVBAgMBVByYWhhMRAwDgYDVQQKDAdFeGFtcGxlMRQwEgYDVQQDDAtleGFtcGxlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArOEYBRyBhcd6u3phrbU2xvTaBoy6W14CpqqfsBrfsUsuSB+JELBCj3a+zRIvy4EY9cnQbF7cPNxbXdCbGEokAUjIIuVBk/I6XhKRe01vlax82o+eFfIhUfl7Xb2Bx9U3m98Qbt3WNrv+VYJjjFP8HWSsWCHKCazj+yvozjuFXUsCAwEAAaNQME4wHQYDVR0OBBYEFN5SUrsStd4aLhBs+MWGRDxLeUP4MB8GA1UdIwQYMBaAFN5SUrsStd4aLhBs+MWGRDxLeUP4MAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADgYEAL59fE6itiRrck6Z7RCjwnOnebQJxpoB/L7TUC/aUIXss40mCviBVKD+Hl4+3sGyp4J2LlzzqhFcPgR9NyxQt0bkahJGH0UXvZETJe719UA0kGFrPMdt6ujwB6/rafT6TinzXN0lEEGikersTrh3BR9Hjw+v7nCQ0D5RfuDn6s5s=
+          type: array
+          items:
+            type: string
+            format: byte
+            example: MIICUDCCAbmgAwIBAgIBADANBgkqhkiG9w0BAQsFADBFMQswCQYDVQQGEwJjejEOMAwGA1UECAwFUHJhaGExEDAOBgNVBAoMB0V4YW1wbGUxFDASBgNVBAMMC2V4YW1wbGUuY29tMB4XDTIwMDExNjE2NDExOFoXDTIxMDExNTE2NDExOFowRTELMAkGA1UEBhMCY3oxDjAMBgNVBAgMBVByYWhhMRAwDgYDVQQKDAdFeGFtcGxlMRQwEgYDVQQDDAtleGFtcGxlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEArOEYBRyBhcd6u3phrbU2xvTaBoy6W14CpqqfsBrfsUsuSB+JELBCj3a+zRIvy4EY9cnQbF7cPNxbXdCbGEokAUjIIuVBk/I6XhKRe01vlax82o+eFfIhUfl7Xb2Bx9U3m98Qbt3WNrv+VYJjjFP8HWSsWCHKCazj+yvozjuFXUsCAwEAAaNQME4wHQYDVR0OBBYEFN5SUrsStd4aLhBs+MWGRDxLeUP4MB8GA1UdIwQYMBaAFN5SUrsStd4aLhBs+MWGRDxLeUP4MAwGA1UdEwQFMAMBAf8wDQYJKoZIhvcNAQELBQADgYEAL59fE6itiRrck6Z7RCjwnOnebQJxpoB/L7TUC/aUIXss40mCviBVKD+Hl4+3sGyp4J2LlzzqhFcPgR9NyxQt0bkahJGH0UXvZETJe719UA0kGFrPMdt6ujwB6/rafT6TinzXN0lEEGikersTrh3BR9Hjw+v7nCQ0D5RfuDn6s5s=
 
     JWSDefaultAlg:
       externalDocs:
