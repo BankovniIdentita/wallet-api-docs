@@ -1710,6 +1710,7 @@ components:
           enum:
             - IN_PROGRESS
             - DONE
+            - EXPIRED
         state:
           type: string
           description: State from request
