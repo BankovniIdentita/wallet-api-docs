@@ -121,11 +121,11 @@ responses, as well as for encrypting requests.
 }
 ```
 
-### Authorization endpoint
+## Authorization endpoint
 This GET endpoint is a starting point for OAuth2 and OpenID Connect authorization code flows.
 This request authenticates the user and returns tokens to the client application 
 as a part of the callback response.
-
+Code challenge is used to protect against replay attacks and its use is RECOMMENDED.
 Exposed by the **Wallet API**. Authoritatively described in [Wallet API](wallet-api/wallet-api.yaml). **Not authenticated**.
 
 ```http
@@ -134,6 +134,8 @@ GET /oatuh2/authorize?
   &client_id=D40D25DB-C330
   &response_type=code
   &state=1234
+  &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+  &code_challenge_method=S256
   &scope=openid%20profile.name%20profile.gender
 Host: wallet.stage.bankid.cz
 ```
@@ -164,6 +166,153 @@ Location: https://bankid.cz/callback?
   &state=1234
 ```
 
+Client's of Wallet API may also use Pushed Authorization Requests (PAR) to obtain authorization code with Rich Authorization Requests (RAR).
+RAR is supported mainly for 
+- Initiation of payment transaction
+- Initiation of issuing flow using authorization_details instead of scopes
+
+PAR may be combined with DPoP for sender bounded E2E flows 
+
+```http 
+GET /oauth2/pushed-auth
+Host: wallet.stage.bankid.cz
+DPoP: <DPoP JWT token>
+
+  redirect_uri=https://bankid.cz/callback
+  &client_id=D40D25DB-C330
+  &response_type=code
+  &state=1234
+  &scope=openid%20profile.name%20profile.gender
+
+```
+Authorization detail example: 
+```http 
+POST /oauth2/pushed-auth
+Host: wallet.stage.bankid.cz
+DPoP: <DPoP JWT token>
+
+  redirect_uri=https://bankid.cz/callback
+  &client_id=D40D25DB-C330
+  &response_type=code
+  &code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+  &code_challenge_method=S256
+  &state=1234
+  &authorization_details=%5B%7B%22type%22%3A%20%22openid_credential%22%2C%20%22
+    credential_configuration_id%22%3A%20%22UniversityDegreeCredential%22%7D%5D
+
+```
+
+Response from Pushed Authorization Request:
+```http
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+Cache-Control: no-cache, no-store
+
+{
+  "request_uri": "urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c",
+  "expires_in": 60
+}
+```
+Subsequent call to /oauth2/authorize.
+```http
+GET /oatuh2/authorize?
+  request_uri=rn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+Host: wallet.stage.bankid.cz
+```
+Response is same as in regular authorization request.
+
+## Service provider/Broswer API for handling Wallet interaction
+This API are used by Service Provider and internal browser page to handle Wallet interaction.
+Exposed by the **Wallet API**.
+
+### GET /request.jwt/{reuqest_id}
+API for getting JWT for Wallet interaction. Used by Service Provider to initiate Wallet interaction via DC API
+```http
+GET /request.jwt/1234?dcapi=true HTTP/1.1
+Host: wallet.stage.bankid.cz
+Accept: application/oauth-authz-req+jwt
+
+``` 
+
+Response is following:
+```http
+HTTP/1.1 200 OK
+Content-Type: application/oauth-authz-req+jwt
+<Signed request JWT> 
+
+``` 
+
+
+### GET /status
+Polling URL for checking status of Wallet interaction. If Wallet interaction is finished, status is DONE.
+
+```http
+GET /request/status?state=1234&client_id=D40D25DB-C330
+Host: wallet.stage.bankid.cz
+```
+
+Response is following: 
+
+```http
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-cache, no-store
+
+{
+  "state": "1234",
+  "status": "IN_PROGRESS"
+}
+```
+
+
+
+### POST /callback
+API serves as a reccievieng point for Wallet responses on Wallet API. Service provider must use this API 
+for handling responses provided by DC API 
+
+#### DC API callback example 
+
+```http
+POST /callback HTTP/1.1
+Host: bankid.cz
+Content-Type: application/x-www-form-urlencoded
+
+state=authorization_code
+&body=<encrypted JWT as response from DC API>
+```
+
+200 OK Response from Wallet API:
+
+```http
+HTTP/2 200 OK
+Content-Type: application/json
+Cache-Control: no-store
+Pragma: no-cache
+DPoP-nonce: 1234567890
+
+{
+  "redirectUri": "https://wallet.stage.bankid.cz/thank-you",
+}
+
+```
+### Get /result 
+
+
+```http
+GET /result?state=1234&client_id=D40D25DB-C330
+Host: wallet.stage.bankid.cz
+```
+
+302 Redirect to original auth URL for obtaining authorization code:
+
+```http
+HTTP/1.1 302 Found
+Location: https://wallet.stage.bankid.cz/oatuh2/authorize?
+  request_uri=rn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
+```
+
 ## Token exchange API
 
 The token endpoint is used by the client to obtain an access token by
@@ -171,6 +320,7 @@ presenting its authorization grant or refresh token.
 
 Exposed by the **Wallet API**. Authoritatively described in [Wallet API](wallet-api/wallet-api.yaml). 
 **Uses client credentials for authentication**.
+DPoP is used for sender bounded E2E flows, and it SHOULD be used for Wallet initiated issuer flows.
 
 **POST** `/token`
 
@@ -180,22 +330,30 @@ Exposed by the **Wallet API**. Authoritatively described in [Wallet API](wallet-
 POST /oauth2/token HTTP/1.1
 Host: bankid.cz
 Content-Type: application/x-www-form-urlencoded
+DPoP: <DPoP JWT token>
 
 grant_type=authorization_code
 &code=8BFAC1DA-3F94-4BBD-A743-473080FB6073
 &redirect_uri=https://serviceprovider.cz/callback
+&client_id=D40D25DB-C330
 &client_secret=368b8099c14c0964a4a9f958c8b5786c46845ec1
 ```
 ---
 ### Authorization code exchange response 200 OK:
-
+```http
+HTTP/2 200 OK
+Content-Type: application/json;charset=utf-8
+Cache-Control: no-store
+Pragma: no-cache
+DPoP-nonce: 1234567890
+```
 ```json
 {
   "access_token": "c03e997c-aa96-4b3f-ad0c-98626833145d",
-  "token_type": "Bearer",
+  "token_type": "DPoP",
   "refresh_token": "1f703f5f-75da-4b58-a1b0-e315700e4227",
   "expires_in": 3600,
-  "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+  "id_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
 }
 ```
 
@@ -207,6 +365,8 @@ HTTP/2 400 Bad Request
 Content-Type: application/json;charset=utf-8
 Cache-Control: no-store
 Pragma: no-cache
+DPoP-nonce: 1234567890
+
 
 {
   "error": "invalid_request",
@@ -256,6 +416,8 @@ HTTP/2 400 Bad Request
 Content-Type: application/json;charset=utf-8
 Cache-Control: no-store
 Pragma: no-cache
+DPoP-nonce: 1234567890
+
 
 {
   "error": "invalid_request",
