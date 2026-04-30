@@ -205,20 +205,16 @@ paths:
       tags:
         - Pushed Authorization Request
       parameters:
-        - $ref: '#/components/parameters/auth_redirect_uri'
-        - $ref: '#/components/parameters/auth_client_id'
-        - $ref: '#/components/parameters/auth_response_type'
-        - $ref: '#/components/parameters/auth_id_token_hint'
-        - $ref: '#/components/parameters/auth_nonce'
-        - $ref: '#/components/parameters/auth_state'
-        - $ref: '#/components/parameters/auth_scope'
-        - $ref: '#/components/parameters/auth_acr_values'
-        - $ref: '#/components/parameters/auth_max_age'
-        - $ref: '#/components/parameters/auth_response_mode'
-        - $ref: '#/components/parameters/auth_ui_locales'
-        - $ref: '#/components/parameters/auth_claims'
-        - $ref: '#/components/parameters/auth_authorization_details'
+
         - $ref: '#/components/parameters/dpop'
+      requestBody:
+        description: Pushed Authorization Request
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequestReq'
+
+
 
       callbacks:
         Login-Flow-Success:
@@ -1437,21 +1433,29 @@ components:
           $ref: '#/components/parameters/auth_state'
         scope:
           $ref: '#/components/parameters/auth_scope'
-        max_age:
-          $ref: '#/components/parameters/auth_max_age'
         authorization_detail:
           $ref: '#/components/parameters/auth_authorization_detail'
+        redirect_uri:
+          $ref: '#/components/parameters/auth_redirect_uri'
+        acr_values:
+          $ref: '#/components/parameters/auth_acr_values'
+        max_age:
+          $ref: '#/components/parameters/auth_max_age'
+        response_mode:
+          $ref: '#/components/parameters/auth_response_mode'
+        ui_locales:
+          $ref: '#/components/parameters/auth_ui_locales'
 
     AuthorizationRequestResponse:
       properties:
-        request_url:
-          description: 'URL for authorization request for SIPOv2 and OIDC4VC in Wallet'
+        request_uri:
+          description: 'URI for identification of the authorization request.'
           type: string
-          example: 'https://wallet.bankid.cz/request.jwt'
-        polling_session_id:
-          description: Id for polling of authorization status
-          type: string
-          example: jbounipvnn
+          example: 'urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c'
+        expires_in:
+          description: A JSON number that represents the lifetime of the request URI in seconds as a positive integer.
+          type: number
+          example: 60
 
     Display:
       properties:
