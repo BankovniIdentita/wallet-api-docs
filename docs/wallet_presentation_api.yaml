@@ -1281,7 +1281,7 @@ components:
       name: DPoP
       in: header
       required: false
-      description: >- 
+      description: >-
         DPoP header as in RFC 9449 [RFC9449]
       schema:
         type: string
@@ -1452,35 +1452,7 @@ components:
           description: Id for polling of authorization status
           type: string
           example: jbounipvnn
-    CredentialOfferResponse:
-      properties:
-        credential_issuer:
-          description: 'URL for Credential Issuer to Wallet'
-          type: string
-          example: 'https://wallet.stage.bankid.cz/request.jwt'
-        credential_configuration_ids:
-          description: vct, namespaces or scopes
-          type: array
-          example: [ IBAN, 'eu.europa.eudi.IBAN' ]
-        grants:
-          type: object
-          properties:
-            authorization_code:
-              type: object
-              properties:
-                authorization_server:
-                  type: string
-            'urn:ietf:params:oauth:grant-type:pre-authorized_code':
-              type: object
-              properties:
-                pre-authorized_code:
-                  type: string
-                authorization_server:
-                  type: string
-    CredentialMetadataResponse:
-      $ref: '#/definitions/CredentialMetadataObject'
-    
-    
+
     Display:
       properties:
         name:
@@ -2010,11 +1982,11 @@ components:
           example: invalid_email
     login:
       description: Response with data for custom login page
-      properties: 
+      properties:
         state:
           type: string
           description: state for polling and result urls
-        clientId: 
+        clientId:
           type: string
           description: client_id for polling and result
         walletRequestId:
@@ -2204,8 +2176,8 @@ components:
         - error
 
     OIDCConfiguration:
-      description: >-
-        It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
+      description: It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
+      type: object
       required:
         - issuer
         - authorization_endpoint
@@ -2322,40 +2294,52 @@ components:
           description: JSON array containing a list of Proof Key for Code Exchange (PKCE) [RFC7636] code challenge methods supported by this OP.
           example: [ 'S256' ]
         id_token_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         id_token_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         id_token_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         userinfo_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         userinfo_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         userinfo_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         request_object_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for Request Objects, which are described in Section 6.1 of OpenID Connect Core 1.0 [OpenID.Core]. These algorithms are used both when the Request Object is passed by value (using the request parameter) and when it is passed by reference (using the request_uri parameter). Servers MUST support ES512 and PS512.
         request_object_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
         request_object_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
         token_endpoint_auth_methods_supported:
           type: array
@@ -2369,12 +2353,14 @@ components:
               - client_secret_basic
               - tls_client_auth
               - self_signed_tls_client_auth
+              - attest_jwt_client_auth
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Token Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
             Other authentication methods MAY be defined by extensions.
         token_endpoint_auth_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Token Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Token Endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
         introspection_endpoint_auth_methods_supported:
           type: array
@@ -2388,12 +2374,14 @@ components:
               - client_secret_basic
               - tls_client_auth
               - self_signed_tls_client_auth
+              -
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Introspection Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
             Other authentication methods MAY be defined by extensions.
         introspection_endpoint_auth_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Introspection Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Introspection endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
         service_documentation:
           type: string
@@ -2640,6 +2628,7 @@ components:
         enum:
           - ES512
           - PS512
+          - RS256
 
     JWSAsymmetricAlg:
       externalDocs:
@@ -3138,77 +3127,93 @@ components:
       type: object
       properties:
         name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
         given_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can be present, with the names being separated by space characters.
         family_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple family names or no family name; all can be present, with the names being separated by space characters.
         middle_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; all can be present, with the names being separated by space characters. Also note that in some cultures, middle names are not used.
         nickname:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickname value of Mike might be returned alongside a given_name value of Michael.
         preferred_username:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Shorthand name by which the End-User wishes to be referred to at the RP, such as `janedoe` or `j.doe`. This value MAY be any valid JSON string including special characters such as @, /, or whitespace. The RP MUST NOT rely upon this value being unique.
         title_prefix:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             "End-User's title prefix."
         title_suffix:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             "End-User's title suffix."
         email:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. **The API consumer MUST NOT rely upon this value being unique.**
         email_verified:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             True if the End-User's e-mail address has been verified; otherwise false. When this Claim Value is true, 
             this means that the OP took affirmative steps to ensure that this e-mail address was controlled by the End-User at the time the verification was performed. 
             The means by which an e-mail address is verified is context-specific, and dependent upon the trust framework or contractual agreements within which the parties are operating.
         gender:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's gender. Values defined by this specification are `female` and `male`. Other values MAY be used when neither of the defined values are applicable.
         birthdate:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format. 
             The year MAY be 0000, indicating that it is omitted. To represent only the year, YYYY format is allowed. 
             Note that depending on the underlying platform's date related function, providing just year can result in varying month and day, 
             so the implementers need to take this factor into account to correctly process the dates.
         zoneinfo:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example, `Europe/Paris` or `America/Los_Angeles`.
         locale:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's locale, represented as a BCP47 [RFC5646] language tag. 
             This is typically an ISO 639-1 Alpha-2 [ISO639‑1] language code in lowercase and an ISO 3166-1 Alpha-2 [ISO3166‑1] country code in uppercase, 
             separated by a dash. For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator 
             rather than a dash, for example, en_US; Relying Parties MAY choose to accept this locale syntax as well.
         phone_number:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's preferred telephone number. E.164 [E.164] is RECOMMENDED as the format of this Claim, for example, +1 (425) 555-1212 or +56 (2) 687 2400.
             If the phone number contains an extension, it is RECOMMENDED that the extension be represented using the RFC 3966 [RFC3966] extension syntax,
             for example, +1 (604) 555-1234;ext=5678.
         phone_number_verified:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             True if the End-User's phone number has been verified; otherwise false. 
             When this Claim Value is true, this means that the OP took affirmative steps to ensure that this phone number was controlled by the End-User 
@@ -3216,7 +3221,8 @@ components:
             framework or contractual agreements within which the parties are operating. When true, the phone_number Claim MUST be in E.164 format and any 
             extensions MUST be represented in RFC 3966 format.
         updated_at:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Time the End-User's information was last updated. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
 
@@ -3490,35 +3496,4 @@ components:
 
     userInfoJWT:
       value: ewoidHlwIjoiVXNlcmluZm8iLAoiYWxnIjoiSFMyNTYiCn0K. ewoic3ViIjogIjIzZjFhYzAwLTVkNTQtNDE2OS1hMjg4LTc5NGFlMmVhZDBjNCIsCiJuYW1lIjogIkphbiBOb3bDoWsiLAoiZ2l2ZW5fbmFtZSI6ICJKYW4iLAogIAkiZmFtaWx5X25hbWUiOiAiTm92w6FrIiwKICAJIm1pZGRsZV9uYW1lIjogIiIsCiAgCSJuaWNrbmFtZSI6ICJab3JybyIsCiAgCSJwcmVmZXJyZWRfdXNlcm5hbWUiOiAiSmFuIiwKIAkiZW1haWwiOiAiSi5ub3Zha0BlbWFpbC5jb20iLAogIAkiZW1haWxfdmVyaWZpZWQiOiB0cnVlLAogIAkiZ2VuZGVyIjogIm1hbGUiLAogIAkiYmlydGhkYXRlIjogIjE5NzAtMDgtMDEiLAogIAkiem9uZWluZm8iOiAiRXVyb3BlL1ByYWd1ZSIsCiAgCSJsb2NhbGUiOiAiY3NfQ1oiLAogIAkicGhvbmVfbnVtYmVyIjogIis0MjAxMjM0NTY3ODkiLAogIAkicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjogZmFsc2UsCiAidXBkYXRlZF9hdCI6IDE1NjgxODg0MzMwMDAKfQo=. cDEuITlDHi14RUEGG3cxEWoXFzZWIG46JmMWZu+/vXImNBh0QUXlgq07xbYWYzF2biUl77+9dXZ2XAEjbFg1fgEDKRXYrgUuCm8kWzNKHgQKIARNPhIBMHlbMtS9O0FmZRl5I31w07FdPC4ndUVkRBd6Dj4nWmEKe9aHHjFgAxFIUTI8bgFbPfK6lbcXLFZsWVZpKBw0MmlUPQFw
-definitions:
-  CredentialMetadataObject:
-    type: object
-    properties:
-      credential_issuer:
-        type: string
-      authorization_servers:
-        type: array
-      credential_endpoint:
-        type: string
-      deferred_credential_endpoint:
-        type: string
-      notification_endpoint:
-        type: string
-      display:
-        $ref: '#/components/schemas/Display'
-      credential_configurations_supported:
-        type: object
-        format:
-          type: string
-        scope:
-          type: string
-        cryptographic_binding_methods_supported:
-          type: array
-        proof_types_supported:
-          type: object
-          properties:
-            jwt:
-              type: object
-              properties:
-                proof_signing_alg_values_supported:
-                  type: array
+
