@@ -122,6 +122,8 @@ paths:
         - $ref: '#/components/parameters/auth_ui_locales'
         - $ref: '#/components/parameters/auth_credential_format'
         - $ref: '#/components/parameters/auth_wallet_profile'
+        - $ref: '#/components/parameters/auth_code_challenge'
+        - $ref: '#/components/parameters/auth_code_challenge_method'
 
       callbacks:
         Login-Flow-Success:
@@ -205,7 +207,6 @@ paths:
       tags:
         - Pushed Authorization Request
       parameters:
-
         - $ref: '#/components/parameters/dpop'
       requestBody:
         description: Pushed Authorization Request
@@ -1019,6 +1020,25 @@ components:
       schema:
         type: string
         example: 'nxrt-084-222_wdutKuOasdj'
+    auth_code_challenge:
+      name: code_challenge
+      in: query
+      required: true
+      description: >-
+        Proof key for Code Exchange by OAuth Public Clients (PKCE) [RFC7636]
+      schema:
+        type: string
+
+    auth_code_challenge_method:
+      name: code_challenge_method
+      in: query
+      required: true
+      description: >-
+        Proof Key for Code Exchange by OAuth Public Clients (PKCE) [RFC7636]
+      schema:
+        type: string
+        enum:
+          - S256
 
     auth_max_age:
       name: max_age
@@ -1454,6 +1474,11 @@ components:
                 $ref: '#/components/parameters/auth_response_mode'
               ui_locales:
                 $ref: '#/components/parameters/auth_ui_locales'
+              code_challenge:
+                $ref: '#/components/parameters/auth_code_challenge'
+              code_challenge_method:
+                $ref: '#/components/parameters/auth_code_challenge_method'
+
 
 
     AuthorizationRequestResponse:
@@ -2707,6 +2732,10 @@ components:
           required:
             - code
           properties:
+            code_verifier:
+              type: string
+              description: 'REQUIRED if the "code_challenge" parameter was included in the Authorization Request as described in Section 4.1.2.1 of OAuth 2.0 [RFC6749].'
+              example: '1234567890'
             code:
               type: string
               description: 'The authorization code received from the authorization server.'
