@@ -1422,29 +1422,39 @@ components:
           type: object
           description: authorization_detail from  auth request
     AuthorizationRequestReq:
-      properties:
-        client_id:
-          $ref: '#/components/parameters/auth_client_id'
-        response_type:
-          $ref: '#/components/parameters/auth_response_type'
-        nonce:
-          $ref: '#/components/parameters/auth_nonce'
-        state:
-          $ref: '#/components/parameters/auth_state'
-        scope:
-          $ref: '#/components/parameters/auth_scope'
-        authorization_detail:
-          $ref: '#/components/parameters/auth_authorization_detail'
-        redirect_uri:
-          $ref: '#/components/parameters/auth_redirect_uri'
-        acr_values:
-          $ref: '#/components/parameters/auth_acr_values'
-        max_age:
-          $ref: '#/components/parameters/auth_max_age'
-        response_mode:
-          $ref: '#/components/parameters/auth_response_mode'
-        ui_locales:
-          $ref: '#/components/parameters/auth_ui_locales'
+
+        allOf:
+          - $ref: '#/components/schemas/ClientSecretPost'
+          - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
+          - required:
+              - client_id
+              - redirect_uri
+              - nonce
+              - state
+            properties:
+              client_id:
+                $ref: '#/components/parameters/auth_client_id'
+              response_type:
+                $ref: '#/components/parameters/auth_response_type'
+              nonce:
+                $ref: '#/components/parameters/auth_nonce'
+              state:
+                $ref: '#/components/parameters/auth_state'
+              scope:
+                $ref: '#/components/parameters/auth_scope'
+              authorization_detail:
+                $ref: '#/components/parameters/auth_authorization_detail'
+              redirect_uri:
+                $ref: '#/components/parameters/auth_redirect_uri'
+              acr_values:
+                $ref: '#/components/parameters/auth_acr_values'
+              max_age:
+                $ref: '#/components/parameters/auth_max_age'
+              response_mode:
+                $ref: '#/components/parameters/auth_response_mode'
+              ui_locales:
+                $ref: '#/components/parameters/auth_ui_locales'
+
 
     AuthorizationRequestResponse:
       properties:
