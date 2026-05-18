@@ -585,6 +585,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/traceId'
           content:
+            text/html:
+              schema:
+                description: HTML page with custom page for Wallet deeplink, QR code or DC API
+
+                type: string
+
             application/json:
               schema:
                 $ref: '#/components/schemas/login'
