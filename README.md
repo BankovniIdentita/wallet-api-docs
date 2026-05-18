@@ -25,12 +25,14 @@ On Relaying party:
 - OpenID Connect Session Management
 - OAuth 2.0 Authorization Server Metadata
 - OAuth2 Pushed Authorization Request
+- Support for obtaining DC API request with openid4vp-v1-signed and encypted responses
+
 
 For Wallet integration:
 - OpenID4VP 1.0
 - Iso 18013:5 extension for OpenID4VP
 - SD-JWT
-
+- Support for DC API with openid4vp-v1-signed request and encrypted responses
 - High Assurance profile for OIDC4VP
 
 ## Funcionality and Protocols in progress

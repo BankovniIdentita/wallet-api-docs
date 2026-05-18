@@ -1,0 +1,67 @@
+sequenceDiagram
+    autonumber
+    participant ServiceProvider
+    participant User
+    participant Browser
+    participant WalletAPI
+    participant UserDevice
+    participant EUDIW
+
+    alt Auth endpoint POST usage
+
+        ServiceProvider->>WalletAPI: POST /oauth2/pushed-auth
+        activate WalletAPI
+        WalletAPI-->>ServiceProvider: 200 response
+        deactivate WalletAPI
+        ServiceProvider->>WalletAPI: GET /auth
+        activate WalletAPI
+        WalletAPI-->>ServiceProvider: 302 to login page
+        deactivate WalletAPI
+        ServiceProvider ->> ServiceProvider: catch redirect, keep cookie for auth
+
+    end
+    Browser ->> Browser: call platform DC API
+    Browser ->> Browser: Display CTAP QR code
+    User ->> UserDevice: Scan CTAP QR code
+    activate UserDevice
+    UserDevice ->> UserDevice: Display system dialog for DC API
+    User ->> UserDevice: Select and cofirm credentials
+    UserDevice ->> EUDIW: initiate OpenID4VP request
+    activate EUDIW
+    EUDIW ->> EUDIW: Display widget for authorization fo request
+    User ->> EUDIW: Authorize with biometric/PID
+    EUDIW -->> UserDevice: Return encrypted response
+    UserDevice -->> Browser: Return encrpyted response via CTAP
+    deactivate EUDIW
+    activate Browser
+    Browser ->> WalletAPI: POST /callback
+    activate WalletAPI
+    WalletAPI -->> Browser: 200 OK
+
+
+
+
+
+
+
+    Browser->>WalletAPI: GET /result
+    activate WalletAPI
+    WalletAPI-->>Browser: 302 original auth link
+    deactivate WalletAPI
+    Browser->>WalletAPI: GET original auth link
+    activate WalletAPI
+    WalletAPI-->>Browser: 302 original callback uri with code
+    deactivate WalletAPI
+    Browser->>ServiceProvider: GET callback uri with code
+    deactivate Browser
+
+    activate ServiceProvider
+    ServiceProvider->>WalletAPI: /token
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: TokenResponse
+    deactivate WalletAPI
+    ServiceProvider->>WalletAPI: /userinfo
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: UserInfoResponse with custom claims
+    deactivate WalletAPI
+    deactivate ServiceProvider

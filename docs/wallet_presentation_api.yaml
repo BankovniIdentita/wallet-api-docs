@@ -4,7 +4,10 @@ info:
   version: 1.3.0
   description: |
     Describes APIs to be implemented by Bank iD.
-
+    * Version 1.2.0
+      * Clean up of unused and obsolete section. 
+      * Addition of DPoP support
+      * Addition of endpoints and parameters for Sep let flows
     * Version 1.1.0
       * updated documentation incorporating findings from POTENTIAL piloting
     * Version 1.0.0
@@ -22,19 +25,14 @@ info:
 
     * [OpenID.Core](https://openid.net/specs/openid-connect-core-1_0.html) OpenID Connect Core 1.0
 
-        * Signed and encrypted JWTs MAY be used for /userinfo and /profile responses
+        * Signed JWTs MAY be used for /userinfo and /profile responses
 
-        * In Service Provider's Bank iD relationship the UserInfo Claims MUST be returned as the 
-        members of a JSON object unless a signed or encrypted response was requested during 
+        * In Service Provider's Wallet API relationship the UserInfo Claims MUST be returned as the 
+        members of a JSON object unless a signed response was requested during 
         Client Registration.
-
-        * The sub (subject) Claim MUST always be returned in the UserInfo Response.
 
         * If a Claim is not returned, that Claim Name SHOULD be omitted from the JSON object 
         representing the Claims; it SHOULD NOT be present with a null or empty string value.
-
-        * The sub Claim in the UserInfo and Profile Response MUST be verified to exactly match the sub Claim 
-        in the ID Token; if they do not match, the UserInfo Response values MUST NOT be used.
 
         * The UserInfo and Profile Endpoint MUST return a content-type header to indicate which format is 
         being returned and if the response body is a text JSON object; the response body SHOULD 
@@ -45,37 +43,6 @@ info:
         also being signed. If both signing and encryption are requested, the response MUST be 
         signed then encrypted, with the result being a Nested JWT.
 
-      * [OpenID.IdentityAssurance](https://openid.net/specs/openid-connect-4-identity-assurance-1_0.html) 
-      OpenID Connect for Identity Assurance 1.0
-
-        * The `txn` Claim as defined in [RFC8417](https://tools.ietf.org/html/rfc8417) is used 
-        in the context of Bank iD data exchange to build audit trails across the parties involved 
-        in an OpenID Connect transaction. Claim txn is always REQUIRED in the userinfo response 
-        content.
-
-        * This arrangement introduces the possibility for the bank to separate the verified
-         Claims within a container element `verified_claims`. This container is composed of the 
-         verification evidence related to a certain verification process and the corresponding 
-         Claims about the End-User which were verified in this process.
-
-        * Implementations MUST ignore any sub-element not defined in this specification or 
-        extensions of this specification.
-
-        * In the case of this definition verification element MUST consist of the following elements:
-
-          * `trust_framework`: REQUIRED. String determining the trust framework governing the 
-          identity verification process. For example, the value of ``cz_aml`` for verification 
-          according to the Czech AML law.
-
-          * `time`: OPTIONAL. Time stamp in ISO 8601:2004 [ISO8601-2004] YYYY-MM-DDThh:mm:ss±hh 
-          format representing the date and time when identity verification took place.
-
-          * `verification_process`: REQUIRED. In the case of this specification, the verification 
-          process shall include the PID issuer identification as stated in PID, which is issuing authority listed in EU trust list
-
-        * Verified Claims can be requested on the level of individual Claims about the End-User 
-        by utilizing the claims parameter as defined in Section 5.5. of the OpenID Connect 
-        specification [OpenID](https://openid.net/specs/openid-connect-core-1_0.html#ClaimsParameter)
 
     * [OpenID.Discovery](https://openid.net/specs/openid-connect-discovery-1_0.html) OpenID Connect Discovery 1.0
 
@@ -86,6 +53,8 @@ info:
     * [OpenID.Back-ChannelLogout](https://openid.net/specs/openid-connect-backchannel-1_0.html)
 
     * [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636) Proof Key for Code Exchange by OAuth Public Clients
+    
+    * [DPoP - RFC9449](https://datatracker.ietf.org/doc/html/rfc9449) OAuth 2.0 Demonstrating Proof of Possession (DPoP)
 
     * [RFC6749](https://tools.ietf.org/html/rfc6749) The OAuth 2.0 Authorization Framework
 
@@ -153,6 +122,8 @@ paths:
         - $ref: '#/components/parameters/auth_ui_locales'
         - $ref: '#/components/parameters/auth_credential_format'
         - $ref: '#/components/parameters/auth_wallet_profile'
+        - $ref: '#/components/parameters/auth_code_challenge'
+        - $ref: '#/components/parameters/auth_code_challenge_method'
 
       callbacks:
         Login-Flow-Success:
@@ -236,19 +207,15 @@ paths:
       tags:
         - Pushed Authorization Request
       parameters:
-        - $ref: '#/components/parameters/auth_redirect_uri'
-        - $ref: '#/components/parameters/auth_client_id'
-        - $ref: '#/components/parameters/auth_response_type'
-        - $ref: '#/components/parameters/auth_id_token_hint'
-        - $ref: '#/components/parameters/auth_nonce'
-        - $ref: '#/components/parameters/auth_state'
-        - $ref: '#/components/parameters/auth_scope'
-        - $ref: '#/components/parameters/auth_acr_values'
-        - $ref: '#/components/parameters/auth_max_age'
-        - $ref: '#/components/parameters/auth_response_mode'
-        - $ref: '#/components/parameters/auth_ui_locales'
-        - $ref: '#/components/parameters/auth_claims'
-        - $ref: '#/components/parameters/auth_authorization_details'
+        - $ref: '#/components/parameters/dpop'
+      requestBody:
+        description: Pushed Authorization Request
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AuthorizationRequestReq'
+
+
 
       callbacks:
         Login-Flow-Success:
@@ -315,7 +282,8 @@ paths:
         - Wallet Callback
       description: |
         API used by Wallet for returning presentations in HTTP GET flavor. 
-        Returns callback url for user-agent redirection
+        This API is currently not utilized since all request are either direct_post.jwt or dc_api.jwt
+        Returns callback url for user-agent redirection.
       parameters:
         - $ref: '#/components/parameters/callback_vp_token'
         - $ref: '#/components/parameters/auth_state'
@@ -343,8 +311,10 @@ paths:
     post:
       description: >-
         API used by Wallet for returning presentations in HTTP POST flavor. 
-        Used for direct_post and direct_post.jwt mode. This API is implemented only by wallet. 
+        Used for direct_post and direct_post.jwt mode. This API is implemented by wallet
+        and by Service Provider in case of DC API flow. 
         It is described is this documents only for completeness of documentation.
+
       tags:
         - Wallet Callback
       requestBody:
@@ -392,6 +362,8 @@ paths:
         unrecognized request parameters. Request and response parameters **MUST NOT** be included more than once.
       tags:
         - Token management
+      parameters:
+        - $ref: '#/components/parameters/dpop'
       requestBody:
         required: true
         content:
@@ -457,6 +429,8 @@ paths:
 
       security:
         - AccessTokenAuth: [ ]
+      parameters:
+        - $ref: '#/components/parameters/dpop'
       tags:
         - Token management
       requestBody:
@@ -548,6 +522,93 @@ paths:
                 type: string
                 format: uri
 
+  /request.jwt/{request_id}:
+    get:
+      tags:
+        - Authorization Request
+      summary: Endpoint for obtaining s signed JWT request for Wallet initiation via DC API flow
+      description: |
+        Endpoint for obtaining s signed JWT request for Wallet initiation via DC API flow
+      parameters:
+        - name: request_id
+          in: path
+          required: true
+          description: ID of the request
+          schema:
+            type: string
+        - name: isdcapi
+          in: query
+          required: false
+          description: Flag for requesting DC API flow
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'OK'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+          content:
+            application/oauth-authz-req+jwt:
+              schema:
+                type: string
+                format: jwt
+  /login:
+    get:
+      summary: Endpoint for obtaining data for creating custom page for interaction with Wallet
+      description: |
+        Endpoint for obtaining data for creating custom page for interaction with Wallet.
+        This endpoint MUST be called with header Accept: application/json otherwise HTML page will be returned 
+        Please note that cookies from /oauth2/autorize endpoint MUST be attached to request,
+        Provides:
+        - state
+        - walletClientId as client_id for for wallet
+        - walletRequestId for requesting object via /request.jwt endpoint for DC API
+        - used wallet scheme and full walletRequestUri fot initiating wallet via deeplink
+        - pollingUrl for polling status
+        - resultUrl for calling finalization of authorization
+      tags:
+        - Authorization Request
+      parameters:
+        - name: Accept
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'Accept: application/json'
+      responses:
+        '200':
+          description: 'OK response with returned data for custom login page'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/login'
+              examples:
+                userInfo:
+                  $ref: '#/components/examples/login'
+        '401':
+          description: 'Unauthorized response when cookies for request was not sent or request is not initialized'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forbidden'
+              example:
+                error: FORBIDDEN
+                error_description: 'Cookies for request was not sent or request is not initialized'
+
+
+
+
 
   /userinfo:
     get:
@@ -580,6 +641,7 @@ paths:
 
       security:
         - Bearer: [ ]
+        - DPoP: [ ]
       tags:
         - User Info
       responses:
@@ -644,7 +706,8 @@ paths:
     get:
       summary: Returns an extended (down to AML) set of authenticated End-User information.
       description: |
-        The Profile Endpoint is an OAuth 2.0 Protected Resource that returns Claims about the authenticated End-User.
+        The Profile Endpoint is an OAuth 2.0 Protected Resource that returns Claims about the authenticated End-User. 
+        Endpoint is for compatibility with Bank iD's IDP API. Should not be used by direct users of the API.
 
         Supported scopes (claims):
         - profile.name (given_name, family_name, middle_name, nickname, preferred_username)
@@ -729,11 +792,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/traceId'
 
-  /.well-known/oauth-authorization-server:
+  /.well-known/openid-configuration:
     get:
       tags:
         - Discovery
       summary: Oauth2 Authorization Server and OpenID Connect configuration discovery
+      description: |
+        Openid discovery endpoint. 
+        Please note that server also supports discovery via .well-known/oauth-authorization-server which contains subset of response.
       externalDocs:
         description: '[OpenID.Discovery] OpenID Connect Discovery 1.0'
         url: https://openid.net/specs/openid-connect-discovery-1_0.html
@@ -774,273 +840,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JWKS'
-  /csc/v2/oauth2/authorize:
-    get:
-      summary: CSCv2 auth request for driving application
-      externalDocs:
-        description: See CSCv2 specs
-        url: https://cloudsignatureconsortium.org/wp-content/uploads/2023/04/csc-api-v2.0.0.2.pdf
-      description: |
-        This GET endpoint is a starting point for OAuth2 and OpenID Connect authorization flows.Code grant and implicit grant is supported by Authorization. Is strictly recommended to 
-        use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
-        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
-
-        This request authenticates the user and returns tokens to the client application as a part of the callback response.
-
-        **Technical scopes** (used in the `scope` query parameter):
-      tags:
-        - QES Authorization Request
-      parameters:
-        - $ref: '#/components/parameters/auth_redirect_uri'
-        - $ref: '#/components/parameters/auth_client_id'
-        - $ref: '#/components/parameters/auth_response_type'
-        - $ref: '#/components/parameters/auth_nonce'
-        - $ref: '#/components/parameters/auth_state'
-        - $ref: '#/components/parameters/auth_scope'
-        - $ref: '#/components/parameters/auth_max_age'
-        - $ref: '#/components/parameters/auth_authorization_detail'
-
-      callbacks:
-        Login-Flow-Success:
-          '{$request.query.redirect_uri}':
-            get:
-              description: |-
-                In case of `response_type=code`.
-                Redirect the End-User to `redirect_uri` after giving consent in Wallet's consent screen
-              parameters:
-                - $ref: '#/components/parameters/auth_code'
-                - $ref: '#/components/parameters/auth_state'
-              responses:
-                '200':
-                  description: Redirect successful
-                  headers:
-                    traceId:
-                      description: Unique ID for each API call for support purposes.
-                      schema:
-                        $ref: '#/components/schemas/traceId'
-
-        Error:
-          '{$request.query.redirect_uri}':
-            get:
-              description: >-
-                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
-                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
-                "application/x-www-form-urlencoded" format
-              parameters:
-                - $ref: '#/components/parameters/auth_error'
-                - $ref: '#/components/parameters/auth_error_description'
-                - $ref: '#/components/parameters/auth_error_uri'
-                - $ref: '#/components/parameters/auth_state'
-              responses:
-                '200':
-                  headers:
-                    traceId:
-                      description: Unique ID for each API call for support purposes.
-                      schema:
-                        $ref: '#/components/schemas/traceId'
-                  description: Redirect successful
-
-      responses:
-        '302':
-          description: |
-            Authentication Response. As a response to authentication flow, the IDP will then call the client redirect_uri with an authorization code or access_token 
-            (in case of successful authentication) or an error response code (if access denied, or when some other error occurred).
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-            Location:
-              description: |
-                Redirect response to endpoint specified in redirect_uri with parameters:
-                `code` Authorization Code.
-                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
-              schema:
-                type: string
-                format: uri
-              example: |
-                HTTP/1.1 302 Found
-                Location: https://service.example.cz/callback?
-                    code=123456
-                    &state=jdpi9hu1HH
-        '400':
-          $ref: '#/components/responses/RequestInvalidError'
-        '429':
-          $ref: '#/components/responses/TooManyRequestError'
-    post:
-      summary: CSCv2 auth request for driving application
-      externalDocs:
-        description: See CSCv2 specs
-        url: https://cloudsignatureconsortium.org/wp-content/uploads/2023/04/csc-api-v2.0.0.2.pdf
-      description: >-
-        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
-        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
-        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
-
-        This request authenticates the user and returns tokens to the client application as a part of the callback response.
-      tags:
-        - QES Authorization Request
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AuthorizationRequestReq'
-
-      callbacks:
-        Login-Flow-Success:
-          '{$request.query.redirect_uri}':
-            get:
-              description: |-
-                In case of `response_type=code`.
-
-                Redirect the End-User to `redirect_uri` after giving consent in bank's "HTML showing consent screen"
-              parameters:
-                - $ref: '#/components/parameters/auth_code'
-                - $ref: '#/components/parameters/auth_state'
-              responses:
-                '200':
-                  description: Redirect successful
-                  headers:
-                    traceId:
-                      description: Unique ID for each API call for support purposes.
-                      schema:
-                        $ref: '#/components/schemas/traceId'
-        Error:
-          '{$request.query.redirect_uri}':
-            get:
-              description: >-
-                If the resource owner denies the access request or if the request fails for reasons **other than a missing or invalid redirection URI**,
-                the authorization server informs the client by adding the following parameters to the query component of the redirection URI using the
-                "application/x-www-form-urlencoded" format
-              parameters:
-                - $ref: '#/components/parameters/auth_error'
-                - $ref: '#/components/parameters/auth_error_description'
-                - $ref: '#/components/parameters/auth_error_uri'
-                - $ref: '#/components/parameters/auth_state'
-              responses:
-                '200':
-                  description: Redirect successful
-                  headers:
-                    traceId:
-                      description: Unique ID for each API call for support purposes.
-                      schema:
-                        $ref: '#/components/schemas/traceId'
-
-      responses:
-        '200':
-          description: |
-            Authentication Response. As a response to authentication flow, the IDP will then call the client 
-            redirect_uri with an authorization code or access_token (in case of successful authentication) or an 
-            error response code (if access denied, or when some other error occurred).
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuthorizationRequestResponse'
-        '400':
-          $ref: '#/components/responses/RequestInvalidError'
-        '429':
-          $ref: '#/components/responses/TooManyRequestError'
-  /csc/v2/oauth2/token:
-    post:
-      summary: Acquire a new set of tokens
-      externalDocs:
-        description: 'The OAuth 2.0 Authorization Framework'
-        url: https://tools.ietf.org/html/rfc6749
-      description: Token requuest for token to use CSC 2.0 API
-      tags:
-        - CSC Token management
-      requestBody:
-        required: true
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              oneOf:
-                - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
-              description: |-
-                In case of issuing access token from authorization code:
-                 - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
-
-
-                PKCE and refreshing access token is not supported for now
-              example:
-                grant_type: authorization_code
-                code: '8BFAC1DA-3F94-4BBD-A743-473080FB6073'
-                redirect_uri: 'https://rp.example.com/callback'
-      responses:
-        '200':
-          description: 'Request for token was successful'
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-            Cache-Control:
-              schema:
-                type: string
-                enum:
-                  - 'no-store'
-            Pragma:
-              schema:
-                type: string
-                enum:
-                  - no-cache
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AccessTokenCSCResponse'
-        '400':
-          $ref: '#/components/responses/TokenErrorResponse'
-        '401':
-          $ref: '#/components/responses/TokenErrorResponseBadCredentials'
-        '429':
-          $ref: '#/components/responses/TooManyRequestError'
-        '500':
-          description: 'Internal Server Error'
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-  /csc/v2/signatures/signHash:
-    post:
-      summary: CSCv2 auth request for driving application
-      externalDocs:
-        description: 'Bank iD OpenId Connect Authentication request'
-        url: 'https://developer.bankid.cz/docs/apis_sep#authorization-api'
-      description: >-
-        This POST endpoint is a starting point for OAuth2 and OpenID Connect authorization flows. Code grant and implicit grant is supported by Authorization. Is strictly recommended
-        to use `Authorization Code` flow [RFC6749 - The OAuth 2.0 Authorization Framework - Authorization Code](https://tools.ietf.org/html/rfc6749#section-1.3.1).
-        For `single-page-application` or `browser-based` apps is recommended to use `Authorization Code` flow with [PKCE - RFC7636](https://tools.ietf.org/html/rfc7636)
-
-        This request authenticates the user and returns tokens to the client application as a part of the callback response.
-      tags:
-        - QES Sign Hash
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SignHashRequest'
-      responses:
-        '200':
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-          description: Returs signed hashes in order which were sent on input
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SignHashRequest'
-        '400':
-          $ref: '#/components/schemas/RequestInvalidError'
 
 components:
   headers:
@@ -1221,6 +1020,25 @@ components:
       schema:
         type: string
         example: 'nxrt-084-222_wdutKuOasdj'
+    auth_code_challenge:
+      name: code_challenge
+      in: query
+      required: true
+      description: >-
+        Proof key for Code Exchange by OAuth Public Clients (PKCE) [RFC7636]
+      schema:
+        type: string
+
+    auth_code_challenge_method:
+      name: code_challenge_method
+      in: query
+      required: true
+      description: >-
+        Proof Key for Code Exchange by OAuth Public Clients (PKCE) [RFC7636]
+      schema:
+        type: string
+        enum:
+          - S256
 
     auth_max_age:
       name: max_age
@@ -1475,6 +1293,17 @@ components:
             $ref: '#/components/schemas/request_claims_param'
           id_token:
             $ref: '#/components/schemas/request_claims_param'
+    dpop:
+      name: DPoP
+      in: header
+      required: false
+      description: >-
+        DPoP header as in RFC 9449 [RFC9449]
+      schema:
+        type: string
+        format: jwt
+      example: 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+
     auth_bank_id:
       name: bank_id
       in: query
@@ -1505,25 +1334,6 @@ components:
         this rules MUST also be followed when encoding Credentials of this format in the vp_token response parameter. 
         Otherwise, this specification does not require any additional encoding 
         when a Credential format is already represented as a JSON object or a JSON string.
-    callback_presentation_submission:
-      name: presentation_submission
-      in: query
-      required: false
-      description: |
-        The presentation_submission element as defined in [DIF.PresentationExchange]. 
-        It contains mappings between the requested Verifiable Credentials and where to find them within the returned VP Token. 
-        This is expressed via elements in the descriptor_map array, known as Input Descriptor Mapping Objects. 
-        These objects contain a field called path, which, for this specification, 
-        MUST have the value $ (top level root path) when only one Verifiable Presentation is contained in the VP Token, 
-        and MUST have the value $[n] (indexed path from root) when there are multiple Verifiable Presentations, 
-        where n is the index to select. 
-        The path_nested object inside an Input Descriptor Mapping Object is used to describe how to find 
-        a returned Credential within a Verifiable Presentation, and the value of the path field in it will ultimately depend 
-        on the credential format.
-    callback_id_token:
-      name: id_token
-      in: query
-      required: false
   requestBodies:
     RevocationRequest:
       required: true
@@ -1632,61 +1442,56 @@ components:
           type: object
           description: authorization_detail from  auth request
     AuthorizationRequestReq:
-      properties:
-        client_id:
-          $ref: '#/components/parameters/auth_client_id'
-        response_type:
-          $ref: '#/components/parameters/auth_response_type'
-        nonce:
-          $ref: '#/components/parameters/auth_nonce'
-        state:
-          $ref: '#/components/parameters/auth_state'
-        scope:
-          $ref: '#/components/parameters/auth_scope'
-        max_age:
-          $ref: '#/components/parameters/auth_max_age'
-        authorization_detail:
-          $ref: '#/components/parameters/auth_authorization_detail'
+
+        allOf:
+          - $ref: '#/components/schemas/ClientSecretPost'
+          - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
+          - required:
+              - client_id
+              - redirect_uri
+              - nonce
+              - state
+            properties:
+              client_id:
+                $ref: '#/components/parameters/auth_client_id'
+              response_type:
+                $ref: '#/components/parameters/auth_response_type'
+              nonce:
+                $ref: '#/components/parameters/auth_nonce'
+              state:
+                $ref: '#/components/parameters/auth_state'
+              scope:
+                $ref: '#/components/parameters/auth_scope'
+              authorization_detail:
+                $ref: '#/components/parameters/auth_authorization_detail'
+              redirect_uri:
+                $ref: '#/components/parameters/auth_redirect_uri'
+              acr_values:
+                $ref: '#/components/parameters/auth_acr_values'
+              max_age:
+                $ref: '#/components/parameters/auth_max_age'
+              response_mode:
+                $ref: '#/components/parameters/auth_response_mode'
+              ui_locales:
+                $ref: '#/components/parameters/auth_ui_locales'
+              code_challenge:
+                $ref: '#/components/parameters/auth_code_challenge'
+              code_challenge_method:
+                $ref: '#/components/parameters/auth_code_challenge_method'
+
+
 
     AuthorizationRequestResponse:
       properties:
-        request_url:
-          description: 'URL for authorization request for SIPOv2 and OIDC4VC in Wallet'
+        request_uri:
+          description: 'URI for identification of the authorization request.'
           type: string
-          example: 'https://wallet.bankid.cz/request.jwt'
-        polling_session_id:
-          description: Id for polling of authorization status
-          type: string
-          example: jbounipvnn
-    CredentialOfferResponse:
-      properties:
-        credential_issuer:
-          description: 'URL for Credential Issuer to Wallet'
-          type: string
-          example: 'https://wallet.stage.bankid.cz/request.jwt'
-        credential_configuration_ids:
-          description: vct, namespaces or scopes
-          type: array
-          example: [ IBAN, 'eu.europa.eudi.IBAN' ]
-        grants:
-          type: object
-          properties:
-            authorization_code:
-              type: object
-              properties:
-                authorization_server:
-                  type: string
-            'urn:ietf:params:oauth:grant-type:pre-authorized_code':
-              type: object
-              properties:
-                pre-authorized_code:
-                  type: string
-                authorization_server:
-                  type: string
-    CredentialMetadataResponse:
-      $ref: '#/definitions/CredentialMetadataObject'
-    
-    
+          example: 'urn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c'
+        expires_in:
+          description: A JSON number that represents the lifetime of the request URI in seconds as a positive integer.
+          type: number
+          example: 60
+
     Display:
       properties:
         name:
@@ -2214,6 +2019,28 @@ components:
             - msdsid_noneu_country
             - email_non_delivered
           example: invalid_email
+    login:
+      description: Response with data for custom login page
+      properties:
+        state:
+          type: string
+          description: state for polling and result urls
+        clientId:
+          type: string
+          description: client_id for polling and result
+        walletRequestId:
+          type: string
+          description: identifier of wallet request on backend for request.jwt paramsw
+        resultUrl:
+          type: string
+          description: url for result of wallet request
+        pollingUrl:
+          type: string
+          description: url for polling wallet request status for deeplink invocaiton
+        walletRequestUri:
+          type: string
+          description: full uri of wallet request for deeplink invocaiton of Wallet
+          example: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
 
     userInfo:
       description: ''
@@ -2288,7 +2115,7 @@ components:
       properties:
         body:
           type: string
-          description: Encrypted JWT (but nott Signed!) containing wallet_post_callback parameters.
+          description: Encrypted JWT (but not Signed!) containing wallet_post_callback parameters.
 
     profile:
       description: Provide detailed information about user
@@ -2388,8 +2215,8 @@ components:
         - error
 
     OIDCConfiguration:
-      description: >-
-        It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
+      description: It includes links to several endpoints (e.g. /oauth2/token) and exposes information on supported signature algorithms among others.
+      type: object
       required:
         - issuer
         - authorization_endpoint
@@ -2506,40 +2333,52 @@ components:
           description: JSON array containing a list of Proof Key for Code Exchange (PKCE) [RFC7636] code challenge methods supported by this OP.
           example: [ 'S256' ]
         id_token_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         id_token_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         id_token_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
         userinfo_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         userinfo_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         userinfo_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSDefaultAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSDefaultAlg'
           description: JSON array containing a list of the JWS [JWS] signing algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE [JWE] encryption algorithms (alg values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         profile_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) [JWA] supported by the UserInfo Endpoint to encode the Claims in a JWT [JWT].
         request_object_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the OP for Request Objects, which are described in Section 6.1 of OpenID Connect Core 1.0 [OpenID.Core]. These algorithms are used both when the Request Object is passed by value (using the request parameter) and when it is passed by reference (using the request_uri parameter). Servers MUST support ES512 and PS512.
         request_object_encryption_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
         request_object_encryption_enc_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWEEnc' ]
+          allOf:
+            - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for Request Objects. These algorithms are used both when the Request Object is passed by value and when it is passed by reference.
         token_endpoint_auth_methods_supported:
           type: array
@@ -2553,12 +2392,14 @@ components:
               - client_secret_basic
               - tls_client_auth
               - self_signed_tls_client_auth
+              - attest_jwt_client_auth
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Token Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
             Other authentication methods MAY be defined by extensions.
         token_endpoint_auth_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Token Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Token Endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
         introspection_endpoint_auth_methods_supported:
           type: array
@@ -2572,12 +2413,14 @@ components:
               - client_secret_basic
               - tls_client_auth
               - self_signed_tls_client_auth
+              -
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Introspection Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].
             Other authentication methods MAY be defined by extensions.
         introspection_endpoint_auth_signing_alg_values_supported:
-          allOf: [ $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg' ]
+          allOf:
+            - $ref: '#/components/schemas/JWSSymmetricAndAsymmetricAlg'
           description: JSON array containing a list of the JWS signing algorithms (alg values) supported by the Introspection Endpoint for the signature on the JWT [JWT] used to authenticate the Client at the Introspection endpoint for the private_key_jwt and client_secret_jwt authentication methods. Servers MUST support ES512 and PS512. The value none MUST NOT be used.
         service_documentation:
           type: string
@@ -2824,6 +2667,7 @@ components:
         enum:
           - ES512
           - PS512
+          - RS256
 
     JWSAsymmetricAlg:
       externalDocs:
@@ -2888,6 +2732,10 @@ components:
           required:
             - code
           properties:
+            code_verifier:
+              type: string
+              description: 'REQUIRED if the "code_challenge" parameter was included in the Authorization Request as described in Section 4.1.2.1 of OAuth 2.0 [RFC6749].'
+              example: '1234567890'
             code:
               type: string
               description: 'The authorization code received from the authorization server.'
@@ -3322,77 +3170,93 @@ components:
       type: object
       properties:
         name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
         given_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Given name(s) or first name(s) of the End-User. Note that in some cultures, people can have multiple given names; all can be present, with the names being separated by space characters.
         family_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Surname(s) or last name(s) of the End-User. Note that in some cultures, people can have multiple family names or no family name; all can be present, with the names being separated by space characters.
         middle_name:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Middle name(s) of the End-User. Note that in some cultures, people can have multiple middle names; all can be present, with the names being separated by space characters. Also note that in some cultures, middle names are not used.
         nickname:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Casual name of the End-User that may or may not be the same as the given_name. For instance, a nickname value of Mike might be returned alongside a given_name value of Michael.
         preferred_username:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Shorthand name by which the End-User wishes to be referred to at the RP, such as `janedoe` or `j.doe`. This value MAY be any valid JSON string including special characters such as @, /, or whitespace. The RP MUST NOT rely upon this value being unique.
         title_prefix:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             "End-User's title prefix."
         title_suffix:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             "End-User's title suffix."
         email:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's preferred e-mail address. Its value MUST conform to the RFC 5322 [RFC5322] addr-spec syntax. **The API consumer MUST NOT rely upon this value being unique.**
         email_verified:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             True if the End-User's e-mail address has been verified; otherwise false. When this Claim Value is true, 
             this means that the OP took affirmative steps to ensure that this e-mail address was controlled by the End-User at the time the verification was performed. 
             The means by which an e-mail address is verified is context-specific, and dependent upon the trust framework or contractual agreements within which the parties are operating.
         gender:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's gender. Values defined by this specification are `female` and `male`. Other values MAY be used when neither of the defined values are applicable.
         birthdate:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's birthday, represented as an ISO 8601:2004 [ISO8601‑2004] YYYY-MM-DD format. 
             The year MAY be 0000, indicating that it is omitted. To represent only the year, YYYY format is allowed. 
             Note that depending on the underlying platform's date related function, providing just year can result in varying month and day, 
             so the implementers need to take this factor into account to correctly process the dates.
         zoneinfo:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             String from zoneinfo [zoneinfo] time zone database representing the End-User's time zone. For example, `Europe/Paris` or `America/Los_Angeles`.
         locale:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's locale, represented as a BCP47 [RFC5646] language tag. 
             This is typically an ISO 639-1 Alpha-2 [ISO639‑1] language code in lowercase and an ISO 3166-1 Alpha-2 [ISO3166‑1] country code in uppercase, 
             separated by a dash. For example, en-US or fr-CA. As a compatibility note, some implementations have used an underscore as the separator 
             rather than a dash, for example, en_US; Relying Parties MAY choose to accept this locale syntax as well.
         phone_number:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             End-User's preferred telephone number. E.164 [E.164] is RECOMMENDED as the format of this Claim, for example, +1 (425) 555-1212 or +56 (2) 687 2400.
             If the phone number contains an extension, it is RECOMMENDED that the extension be represented using the RFC 3966 [RFC3966] extension syntax,
             for example, +1 (604) 555-1234;ext=5678.
         phone_number_verified:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             True if the End-User's phone number has been verified; otherwise false. 
             When this Claim Value is true, this means that the OP took affirmative steps to ensure that this phone number was controlled by the End-User 
@@ -3400,7 +3264,8 @@ components:
             framework or contractual agreements within which the parties are operating. When true, the phone_number Claim MUST be in E.164 format and any 
             extensions MUST be represented in RFC 3966 format.
         updated_at:
-          allOf: [ $ref: '#/components/schemas/claims_generic_types' ]
+          allOf:
+            - $ref: '#/components/schemas/claims_generic_types'
           description: >
             Time the End-User's information was last updated. Its value is a JSON number representing the number of seconds from 1970-01-01T0:0:0Z as measured in UTC until the date/time.
 
@@ -3597,6 +3462,14 @@ components:
             $ref: '#/components/schemas/traceId'
 
   examples:
+    login:
+      value:
+        state: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
+        clientId: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
+        walletRequestId: RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8
+        resultUrl: "/result"
+        pollingUrl: "/request/status"
+        walletRequestUri: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
     userInfo:
       value:
         sub: 23f1ac00-5d54-4169-a288-794ae2ead0c4
@@ -3666,35 +3539,4 @@ components:
 
     userInfoJWT:
       value: ewoidHlwIjoiVXNlcmluZm8iLAoiYWxnIjoiSFMyNTYiCn0K. ewoic3ViIjogIjIzZjFhYzAwLTVkNTQtNDE2OS1hMjg4LTc5NGFlMmVhZDBjNCIsCiJuYW1lIjogIkphbiBOb3bDoWsiLAoiZ2l2ZW5fbmFtZSI6ICJKYW4iLAogIAkiZmFtaWx5X25hbWUiOiAiTm92w6FrIiwKICAJIm1pZGRsZV9uYW1lIjogIiIsCiAgCSJuaWNrbmFtZSI6ICJab3JybyIsCiAgCSJwcmVmZXJyZWRfdXNlcm5hbWUiOiAiSmFuIiwKIAkiZW1haWwiOiAiSi5ub3Zha0BlbWFpbC5jb20iLAogIAkiZW1haWxfdmVyaWZpZWQiOiB0cnVlLAogIAkiZ2VuZGVyIjogIm1hbGUiLAogIAkiYmlydGhkYXRlIjogIjE5NzAtMDgtMDEiLAogIAkiem9uZWluZm8iOiAiRXVyb3BlL1ByYWd1ZSIsCiAgCSJsb2NhbGUiOiAiY3NfQ1oiLAogIAkicGhvbmVfbnVtYmVyIjogIis0MjAxMjM0NTY3ODkiLAogIAkicGhvbmVfbnVtYmVyX3ZlcmlmaWVkIjogZmFsc2UsCiAidXBkYXRlZF9hdCI6IDE1NjgxODg0MzMwMDAKfQo=. cDEuITlDHi14RUEGG3cxEWoXFzZWIG46JmMWZu+/vXImNBh0QUXlgq07xbYWYzF2biUl77+9dXZ2XAEjbFg1fgEDKRXYrgUuCm8kWzNKHgQKIARNPhIBMHlbMtS9O0FmZRl5I31w07FdPC4ndUVkRBd6Dj4nWmEKe9aHHjFgAxFIUTI8bgFbPfK6lbcXLFZsWVZpKBw0MmlUPQFw
-definitions:
-  CredentialMetadataObject:
-    type: object
-    properties:
-      credential_issuer:
-        type: string
-      authorization_servers:
-        type: array
-      credential_endpoint:
-        type: string
-      deferred_credential_endpoint:
-        type: string
-      notification_endpoint:
-        type: string
-      display:
-        $ref: '#/components/schemas/Display'
-      credential_configurations_supported:
-        type: object
-        format:
-          type: string
-        scope:
-          type: string
-        cryptographic_binding_methods_supported:
-          type: array
-        proof_types_supported:
-          type: object
-          properties:
-            jwt:
-              type: object
-              properties:
-                proof_signing_alg_values_supported:
-                  type: array
+
