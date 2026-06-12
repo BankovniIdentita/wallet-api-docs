@@ -46,11 +46,9 @@ sequenceDiagram
 
     activate Browser
     Browser->>Browser: polling auth status = DONE
-    Browser->>WalletAPI: GET /result
-    activate WalletAPI
-    WalletAPI-->>Browser: 302 original auth link
+
     deactivate WalletAPI
-    Browser->>WalletAPI: GET original auth link
+    Browser->>WalletAPI: GET /redirect_uri from stauts response
     activate WalletAPI
     WalletAPI-->>Browser: 302 original callback uri with code
     deactivate WalletAPI

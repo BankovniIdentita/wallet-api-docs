@@ -40,15 +40,8 @@ sequenceDiagram
 
 
 
-
-
-
-
-    Browser->>WalletAPI: GET /result
-    activate WalletAPI
-    WalletAPI-->>Browser: 302 original auth link
     deactivate WalletAPI
-    Browser->>WalletAPI: GET original auth link
+    Browser->>WalletAPI: GET /redirect_uri from status response
     activate WalletAPI
     WalletAPI-->>Browser: 302 original callback uri with code
     deactivate WalletAPI

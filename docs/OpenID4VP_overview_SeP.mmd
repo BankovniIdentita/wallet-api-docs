@@ -46,10 +46,8 @@ sequenceDiagram
 
     activate ServiceProvider
     ServiceProvider->>ServiceProvider: from polling auth status = DONE
-    ServiceProvider ->> WalletAPI: /result
     activate WalletAPI
-    WalletAPI -->> ServiceProvider: 302 to auth url
-    ServiceProvider->>WalletAPI: GET auth link
+    ServiceProvider->>WalletAPI: GET /redirect_uri from /request/status response
     activate WalletAPI
     WalletAPI-->>ServiceProvider: 302 original callback uri with code
     deactivate WalletAPI

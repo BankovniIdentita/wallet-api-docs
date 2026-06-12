@@ -4,6 +4,10 @@ info:
   version: 1.3.0
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.0
+      * Remove /result endpoint
+      * Status endpoint now returns redirect_uri for successful results
+      * Clarify that uri in /callback endpoint is used for redirection to original authorize endpoint for same device flows - especially for issuance.
     * Version 1.2.0
       * Clean up of unused and obsolete section. 
       * Addition of DPoP support
@@ -297,17 +301,13 @@ paths:
                 $ref: '#/components/schemas/traceId'
             Location:
               description: |
-                Redirect response to endpoint specified in redirect_uri with parameters:
-                `code` Authorization Code.
-                `state` OAuth 2.0 state value. REQUIRED if the state parameter is present in the Authorization Request. Clients MUST verify that the state value is equal to the value of state parameter in the Authorization Request.
+                Redirect response to original authorize endpoint with same parameters for obtaining authorization code.
               schema:
                 type: string
                 format: uri
               example: |
                 HTTP/1.1 302 Found
-                Location: https://service.example.cz/callback?
-                    code=123456
-                    &state=jdpi9hu1HH
+                Location: https://service.example.cz/oauth2/authorize?
     post:
       description: >-
         API used by Wallet for returning presentations in HTTP POST flavor. 
@@ -334,7 +334,7 @@ paths:
               schema:
                 properties:
                   redirect_uri:
-                    description: Uri pro original User Agent, Wallet uses this URI to redirect in user's device. Used in same device flows.
+                    description: Uri for original User Agent, Wallet uses this URI to redirect in user's device. Used in same device flows.
 
   /oauth2/token:
     post:
@@ -497,30 +497,8 @@ paths:
               example:
                 status: DONE
                 state: 'ab123456'
-  /result:
-    get:
-      summary: Result API for browser/Sep to authorize session in Wallet
-      description: |
-        Result endpoint is custom endpoint for browser and server-side request for confirming and 
-        binding of authorization request in Wallet API with data from Wallet. Returns redirect to original auth request that if conditions are met, is authorized.
-      tags:
-        - Polling
-      parameters:
-        - $ref: '#/components/parameters/auth_client_id'
-        - $ref: '#/components/parameters/auth_state'
-      responses:
-        '302':
-          description: Valid response
-          headers:
-            traceId:
-              description: Unique ID for each API call for support purposes.
-              schema:
-                $ref: '#/components/schemas/traceId'
-            localtion:
-              description: URL to follow redirect
-              schema:
-                type: string
-                format: uri
+                redirect_uri: 'https://rp.example.com/callback'
+
 
   /request.jwt/{request_id}:
     get:
@@ -1525,6 +1503,9 @@ components:
         state:
           type: string
           description: State from request
+        redirect_uri:
+          type: string
+          description: Original Auth URI from request
     name:
       type: string
       description: End-User's full name in displayable form including all name parts, possibly including titles and suffixes, ordered according to the End-User's locale and preferences.
