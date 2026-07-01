@@ -28,7 +28,9 @@ API of Wallet API authentic source needs to have following properties
 - optionally can require mTLS – in that case Authentic Source is responsible for issuing client certificate
 
 In future we will also support Authentic Sources fulfilling API by ETSI TS 119 478
-As per API endpoints, now only .well-known endpoint and /retrieve endpoint are required. We assume in near future we will also add /authorize endpoint for validation of data from Wallet prior to credentials issuance
+As per API endpoints, now only .well-known endpoint and /retrieve endpoint are required. 
+Support for /authorize endpoint is optional, and highly recommended for sources with multiple data sets per user like bank accounts.
+We assume in near future we will also add /authorize endpoint for validation of data from Wallet prior to credentials issuance
 
 ### Client Assertion authentication 
 The following code describes structure of client assertion sent by Wallet API issuer to Authentic Source
@@ -40,6 +42,7 @@ The following code describes structure of client assertion sent by Wallet API is
             .jwtID(UUID.randomUUID().toString())
             .subject(issueriD)
             .claim("scope", credentialConfigurationId)
+            .claim("credential_identifier", "my-credential-identifier")
             .claim("user_auth", userAuth)
 
 Please note that Authentic source needs to validate and  understand following claims
@@ -50,12 +53,13 @@ Please note that Authentic source needs to validate and  understand following cl
 - user_auth will be user authentication token. This might be one of 2 things:
   - map of claims with data returned from Wallet that Authentic Source needs to match to its data
   - claim "token" with token returned from future /authorize endpoint (WIP)
+- credential_identifier claim is optional and can be used to identify credential in case of multiple credentials with different data sets are issued by Issuer
 Moreover JWT is singed by private key of Issuer. Signature MUST be validated by public key that needs to be resolved at .well-known/jwks/{issuerId} url 
 
 ### Attributes matching and Wallet request by Authentic source
 
 Issuer requests some credentials from Wallet for Authentic Source to match to it's own internal data. 
-In this first iteration we assume that Issuer will reuquest following data
+In this first iteration we assume that Issuer will request following data
 - attributes from PID for cross-border matching by CIR (first name, last name, date of birth, country, PID metadata)
 - attributes from Czech Pub-EAA (once published)
 - SUA/SCA in case Wallet is already onboarded and used for login
