@@ -7,6 +7,46 @@ info:
 servers:
   - url: 'https://issuer.example.com'
 paths:
+  /{issuer_id}/credential-offer:
+    post:
+      summary: Credential Offer endpoint
+      description: Endpoint for obtaining credential offer for initiating Wallet Issuance.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialOfferRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CredentialOfferResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /.well-known/openid-credential-issuer/{issuer_id}:
     get:
       parameters:
@@ -242,7 +282,30 @@ components:
               items:
                 type: string
 
+    CredentialOfferRequest:
+      type: object
+      required:
+        - grantType
+        - credentialConfigId
+        - txCodeRequired
+      properties:
+        grantType:
+          type: string
+          format: enum
+          values:
+            - "AUTHORIZATION_CODE"
+        credentialConfigId:
+          type: array
+          items:
+            type: string
 
+        txCodeRequired:
+          type: boolean
+    CredentialOfferResponse:
+      type: object
+      properties:
+        offerUri:
+          type: string
     CredentialDisplay:
       type: object
       properties:

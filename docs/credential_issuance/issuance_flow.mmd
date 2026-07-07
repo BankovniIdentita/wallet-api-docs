@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    participant User
+    participant EUDIW
+    participant InitiatingParty
+    participant WalletAPI
+    participant AuthenticSource
+
+
+    User --> InitiatingParty: Add credentials to my Wallet
+    activate InitiatingParty
+    InitiatingParty --> WalletAPI: /oauth2/token - get AT for offer call with client_credentials grant
+    activate WalletAPI
+    WalletAPI -->> InitiatingParty: AT
+    InitiatingParty --> WalletAPI: /{issuer_id}/credential-offer
+    activate WalletAPI
+    WalletAPI -->> InitiatingParty: offer uri
+    InitiatingParty --> InitiatingParty: Display offer as QR code or as link for deeplink
+    User --> User: Scan QR code / init Wallet with deep link
+    deactivate InitiatingParty
+    activate EUDIW
+    EUDIW --> WalletAPI: /.well-known/openid-credential-issuer/{issuer_id}
+    activate WalletAPI
+    WalletAPI -->> EUDIW: credential metadata
+    EUDIW --> WalletAPI: /.well-known/oauth-authorization-server
+    activate WalletAPI
+    WalletAPI -->> EUDIW: Authorization server metadata
+    EUDIW --> WalletAPI: POST /oauth/par with client attestation & DPoP
+    activate WalletAPI
+    WalletAPI --> WalletAPI: validate client attestation
+    WalletAPI -->> EUDIW: PAR response
+    EUDIW --> WalletAPI: /oauth2/authorize with request_uri from PAR
+    activate WalletAPI
+    WalletAPI -->> EUDIW: deeplink for presentation
+    note over WalletAPI, EUDIW:  regular presentation according to request is performed
+    WalletAPI --> EUDIW: redirect via /oauth2/authorize to obtain redirect to deeplink for callback
+    activate EUDIW
+    EUDIW --> WalletAPI: /oauth2/token with client attestation and DPoP 
+    activate WalletAPI
+    opt credential identifier is supported 
+        WalletAPI --> AuthenticSource: /api/authorize
+        activate AuthenticSource
+        AuthenticSource -->> WalletAPI: authorization token + credential identifiers
+        end
+    WalletAPI -->> EUDIW: AT + RT + optionally authorization detail ]
+    
+    EUDIW --> WalletAPI: /{issuer_id}/credential with AT and DPoP
+    activate WalletAPI
+    WalletAPI --> AuthenticSource: /api/retrieve
+    activate AuthenticSource
+    AuthenticSource -->> WalletAPI: data for credential
+    WalletAPI -->> EUDIW: issued credentials for Wallet 
+    
+    
