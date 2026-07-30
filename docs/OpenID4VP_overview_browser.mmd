@@ -15,13 +15,12 @@ sequenceDiagram
         deactivate WalletAPI
         Browser->>WalletAPI: /login
         activate WalletAPI
-        WalletAPI-->>Browser: login page with QR code / link
+        WalletAPI--> Browser: login page with QR code / link
         deactivate WalletAPI
         loop UserAgent polling
             Browser->>WalletAPI: /status
             activate WalletAPI
             WalletAPI-->>Browser: status
-            deactivate WalletAPI
         end
         deactivate Browser
     end
