@@ -92,7 +92,12 @@ components:
           type: string
           description: Name of the attribute
         attribute_value:
-          type: any
+          anyOf:
+            - type: string
+            - type: number
+            - type: integer
+            - type: boolean
+            - type: array
           description: Value of the attribute
 
 
