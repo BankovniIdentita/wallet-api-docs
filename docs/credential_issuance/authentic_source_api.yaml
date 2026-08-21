@@ -1,10 +1,12 @@
 openapi: 3.1.0
 info:
-  title: Title
-  description: Title
-  version: 1.0.0
+  title: Authentic Source API
+  description: | 
+    API expected by Wallet API from data providers
+
+  version: 1.0.1
 servers:
-  - url: 'https'
+  - url: 'https://authentic-source.bankid.cz'
 paths:
   /.well-known/authentic-source:
     get:
@@ -17,6 +19,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthenticSourceMetadata'
+
   /retrieve:
     post:
       summary: Retrieve credential authentic source
@@ -30,7 +33,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthenticSourceMetadata'
+                $ref: '#/components/schemas/RetrieveResponse'
+        '400':
+          description: Bad request, client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized, invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden, access denied, in case of invalid audience
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /authorize:
     post:
       summary: Match and authorize user's data from Wallet
@@ -48,10 +75,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthorizeResponse'
+        '400':
+          description: Bad request, client error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized, invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden, access denied, in case of invalid audience
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     AuthenticSourceMetadata:
       type: object
+      required:
+        - authentic_source_url
+        - retrieve_endpoint
       properties:
         authentic_source_url:
           type: string
@@ -62,9 +116,16 @@ components:
           description: >-
             Endpoint to retrieve credential from authentic source
           example: https://authentic.example.com/retrieve
+        authorize_endpoint:
+          type: string
+          description: >-
+            Endpoint to authorize credential retrieval from authentic source, used for credential_identifiers
+          example: https://authentic.example.com/authorize
 
     RetrieveResponse:
       type: object
+      required:
+        - attributes
       properties:
         attributes:
           type: array
@@ -73,6 +134,8 @@ components:
 
     AuthorizeResponse:
       type: object
+      required:
+        - authorization_token
       properties:
         authorization_token:
           type: string
@@ -87,6 +150,9 @@ components:
           example: ['credential_identifier_1', 'credential_identifier_2']
     Attribute:
       type: object
+      required:
+        - attribute_name
+        - attribute_value
       properties:
         attribute_name:
           type: string
@@ -98,7 +164,18 @@ components:
             - type: integer
             - type: boolean
             - type: array
+            - type: object
           description: Value of the attribute
-
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+        error_description:
+          type: string
+security:
+  - bearerAuth: []
 
 

@@ -3,7 +3,7 @@ info:
   title: OpenID for Verifiable Credential Issuance API
   description: |
     This API is based on the [OpenID for Verifiable Credential Issuance](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) specification (version 1.0).
-  version: 1.0.0
+  version: 1.0.1
 servers:
   - url: 'https://issuer.example.com'
 paths:
@@ -146,8 +146,6 @@ paths:
     post:
       summary: Nonce Endpoint
       description: The Nonce Endpoint is used to obtain a c_nonce.
-      security:
-        - BearerAuth: [ ]
       parameters:
         - in: path
           name: issuer_id
@@ -242,8 +240,8 @@ components:
             batch_size:
               type: int
         credential_configurations_supported:
-          type: array
-          items:
+          type: object
+          additionalProperties:
             $ref: '#/components/schemas/CredentialConfigurationSupported'
 
     CredentialConfigurationSupported:
@@ -287,7 +285,6 @@ components:
       required:
         - grantType
         - credentialConfigId
-        - txCodeRequired
       properties:
         grantType:
           type: string
@@ -298,13 +295,14 @@ components:
           type: array
           items:
             type: string
-
         txCodeRequired:
           type: boolean
     CredentialOfferResponse:
       type: object
       properties:
         offerUri:
+          type: string
+        issuer_state:
           type: string
     CredentialDisplay:
       type: object

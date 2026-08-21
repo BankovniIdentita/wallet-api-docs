@@ -4,6 +4,8 @@ info:
   version: 1.3.0
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.1
+      * Generalize JWKS endpoint for all entities 
     * Version 1.3.0
       * Remove /result endpoint
       * Status endpoint now returns redirect_uri for successful results
@@ -800,11 +802,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/OIDCConfiguration'
 
-  /.well-known/jwks:
+  /.well-known/jwks/{entity_id}:
     get:
       description: >-
         This specific pathname is Mandatory, exact pathname has to be specified in `OIDCConfiguration.jwks_uri`.
-
         This endpoint returns JSON Web Keys to be used as public keys for verifying OIDC ID Tokens, responses and encrypting requests.
       tags:
         - Discovery
@@ -812,6 +813,15 @@ paths:
       externalDocs:
         description: '[RFC7517] JSON Web Key (JWK)'
         url: https://tools.ietf.org/html/rfc7517
+      parameters:
+        - name: entity_id
+          in: path
+          required: false
+          description: >-
+            Entity ID of the wallet - usually client_id of Verifier or Issuer, 
+            If ommited - defaults to default client_id keys.
+          schema:
+            type: string
       responses:
         '200':
           description: JWKS
@@ -1426,7 +1436,6 @@ components:
           type: object
           description: authorization_detail from  auth request
     AuthorizationRequestReq:
-
         allOf:
           - $ref: '#/components/schemas/ClientSecretPost'
           - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
@@ -2303,6 +2312,8 @@ components:
               - loa2
             example: [ 'loa2', 'loa3' ]
           description: JSON array containing a list of the Authentication Context Class References that this OP supports.
+          example: [ "loa4"]
+          description: List of supported authentication context classes
         subject_types_supported:
           type: array
           items:
@@ -2327,10 +2338,20 @@ components:
           allOf:
             - $ref: '#/components/schemas/JWEAlg'
           description: JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
+          type: array
+          items:
+            type: string
+          example: [ "ECDH-ES"]
+          description: List of supported encryption algorithms for ID tokens
         id_token_encryption_enc_values_supported:
           allOf:
             - $ref: '#/components/schemas/JWEEnc'
           description: JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for the ID Token to encode the Claims in a JWT [JWT].
+          type: array
+          items:
+            type: string
+          example: [ "A256GCM"]
+          description: List of supported encryption encodings for ID tokens
         userinfo_signing_alg_values_supported:
           allOf:
             - $ref: '#/components/schemas/JWSDefaultAlg'
@@ -2488,7 +2509,10 @@ components:
           description: >-
             Boolean value specifying whether the OP can pass iss (issuer) and sid (session ID) query parameters to identify the RP session with the OP when the frontchannel_logout_uri is used. 
             If supported, the sid Claim is also included in ID Tokens issued by the OP. If omitted, the default value is false.
-
+        healthcheck_endpoint:
+          type: string
+          example: https://idp.example.org/actuator/health
+          description: Endpoint for health check
     JWKS:
       description: JSONWebKeySet JSON web key set
       type: object
@@ -2518,16 +2542,11 @@ components:
             IANA "JSON Web Signature and Encryption Algorithms" registry established by [JWA] or be a value that contains a Collision-
             Resistant Name. The "alg" value is a case-sensitive ASCII string.
           type: string
-          example: RS256
+          example: ES256
           enum:
-            - RS256
-            - RS384
-            - RS512
             - ES256
             - ES384
             - ES512
-            - RSA1_5
-            - RSA-OAEP
             - ECDH-ES
             - A128KW
             - A256KW
@@ -2648,26 +2667,25 @@ components:
         description: 'OpenID JWS supported algorithm'
         url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
       type: array
-      example: [ 'ES512', 'PS512' ]
+      example: [ 'ES512' ]
       items:
         type: string
         enum:
+          - ES256
+          - ES384
           - ES512
-          - PS512
-          - RS256
 
     JWSAsymmetricAlg:
       externalDocs:
         description: 'OpenID JWS supported algorithm'
         url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
       type: array
-      example: [ 'RS512' ]
+      example: [ 'ES256' ]
       items:
         type: string
         enum:
-          - RS256
-          - RS512
-          - PS512
+          - ES256
+          - ES384
           - ES512
 
     JWSSymmetricAndAsymmetricAlg:
@@ -2675,15 +2693,12 @@ components:
         description: 'OpenID JWS supported algorithm'
         url: https://openid.net/specs/draft-jones-json-web-signature-04.html#AlgTable
       type: array
-      example: [ 'RS512' ]
+      example: [ 'ES256' ]
       items:
         type: string
         enum:
-          - HS256
-          - HS512
-          - RS256
-          - RS512
-          - PS512
+          - ES256
+          - ES384
           - ES512
 
     JWEAlg:
@@ -2696,8 +2711,7 @@ components:
         type: string
         enum:
           - ECDH-ES
-          - RSA-OAEP-256
-          - RSA-OAEP
+
 
     JWEEnc:
       externalDocs:

@@ -1,5 +1,6 @@
 # Wallet API documentation
 ## History 
+- Version: 0.0.3 - Fixes and typos
 - Version: 0.0.2 - Update API based on experiences from LSPs 
 - Version: 0.0.1 - Filip's first notices
 ## Introduction
@@ -129,7 +130,7 @@ Code challenge is used to protect against replay attacks and its use is RECOMMEN
 Exposed by the **Wallet API**. Authoritatively described in [Wallet API](wallet-api/wallet-api.yaml). **Not authenticated**.
 
 ```http
-GET /oatuh2/authorize?
+GET /oauth2/authorize?
   redirect_uri=https://bankid.cz/callback
   &client_id=D40D25DB-C330
   &response_type=code
@@ -216,7 +217,7 @@ Cache-Control: no-cache, no-store
 ```
 Subsequent call to /oauth2/authorize.
 ```http
-GET /oatuh2/authorize?
+GET /oauth2/authorize?
   request_uri=rn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
 Host: wallet.stage.bankid.cz
 ```
@@ -229,7 +230,7 @@ Exposed by the **Wallet API**.
 ### GET /request.jwt/{reuqest_id}
 API for getting JWT for Wallet interaction. Used by Service Provider to initiate Wallet interaction via DC API
 ```http
-GET /request.jwt/1234?dcapi=true HTTP/1.1
+GET /request.jwt/1234?isdcapi=true HTTP/1.1
 Host: wallet.stage.bankid.cz
 Accept: application/oauth-authz-req+jwt
 
@@ -244,8 +245,8 @@ Content-Type: application/oauth-authz-req+jwt
 ``` 
 
 
-### GET /status
-Polling URL for checking status of Wallet interaction. If Wallet interaction is finished, status is DONE.
+### GET /request/status
+Polling URL for checking status of Wallet interaction. If Wallet interaction is finished, status is DONE and redirect_uri is redturned 
 
 ```http
 GET /request/status?state=1234&client_id=D40D25DB-C330
@@ -263,6 +264,21 @@ Cache-Control: no-cache, no-store
 {
   "state": "1234",
   "status": "IN_PROGRESS"
+}
+```
+
+If done 
+
+```http
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+Cache-Control: no-cache, no-store
+
+{
+  "state": "1234",
+  "status": "DONE",
+  "redirectUri": "https://wallet.stage.bankid.cz/oauth2/authorize?... ",
 }
 ```
 
@@ -293,25 +309,13 @@ Pragma: no-cache
 DPoP-nonce: 1234567890
 
 {
-  "redirectUri": "https://wallet.stage.bankid.cz/thank-you",
+  "redirect_uri": "https://wallet.stage.bankid.cz/thank-you",
 }
 
 ```
 ### Get /result 
 
-
-```http
-GET /result?state=1234&client_id=D40D25DB-C330
-Host: wallet.stage.bankid.cz
-```
-
-302 Redirect to original auth URL for obtaining authorization code:
-
-```http
-HTTP/1.1 302 Found
-Location: https://wallet.stage.bankid.cz/oatuh2/authorize?
-  request_uri=rn:ietf:params:oauth:request_uri:6esc_11ACC5bwc014ltc14eY22c
-```
+REMOVED
 
 ## Token exchange API
 
