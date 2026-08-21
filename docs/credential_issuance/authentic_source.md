@@ -43,6 +43,7 @@ The following code describes structure of client assertion sent by Wallet API is
             .subject(issueriD)
             .claim("scope", credentialConfigurationId)
             .claim("credential_identifier", "my-credential-identifier")
+            .claim("issuer_state", issuerState)
             .claim("user_auth", userAuth)
 
 Please note that Authentic source needs to validate and  understand following claims
@@ -53,6 +54,7 @@ Please note that Authentic source needs to validate and  understand following cl
 - user_auth will be user authentication token. This might be one of 2 things:
   - map of claims with data returned from Wallet that Authentic Source needs to match to its data
   - claim "token" with token returned from future /authorize endpoint (WIP)
+- issuer_state is value that binding flow to single opaque value between Initializing Part, Issuer, Wallet and Authentic Source
 - credential_identifier claim is optional and can be used to identify credential in case of multiple credentials with different data sets are issued by Issuer
 Moreover JWT is singed by private key of Issuer. Signature MUST be validated by public key that needs to be resolved at .well-known/jwks/{issuerId} url 
 
