@@ -3,6 +3,8 @@ info:
   title: Authentic Source API
   description: | 
     API expected by Wallet API from data providers
+    Endpoints advertised by /.well-known/authentic-source endpoint are actual one, that are exposed by Authentic source
+    Paths in documentation are illustrative
 
   version: 1.0.1
 servers:
@@ -11,7 +13,9 @@ paths:
   /.well-known/authentic-source:
     get:
       summary: Get the credential authentic source
-      description: Returns defined endpoints for authentic source
+      description: >- 
+        Returns defined endpoints for authentic source.
+        Endpoints advertised by this endpoint are actual one, that are exposed by authetic source
       responses:
         '200':
           description: Successful response
@@ -26,7 +30,6 @@ paths:
       description: Retrieve credential authentic source
       security:
         - BearerAuth: [ ]
-
       responses:
         '200':
           description: Successful response
@@ -175,7 +178,12 @@ components:
           type: string
         error_description:
           type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
 security:
   - bearerAuth: []
-
 

@@ -1,9 +1,11 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.3.0
+  version: 1.3.2
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.2
+      * Housekeeping
     * Version 1.3.1
       * Generalize JWKS endpoint for all entities 
     * Version 1.3.0
@@ -473,7 +475,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/traceId'
 
-  /status:
+  /request/status:
     get:
       summary: Polling API for retrieving status of authentication via Wallet
       description: |
@@ -816,7 +818,7 @@ paths:
       parameters:
         - name: entity_id
           in: path
-          required: false
+          required: true
           description: >-
             Entity ID of the wallet - usually client_id of Verifier or Issuer, 
             If ommited - defaults to default client_id keys.
@@ -834,7 +836,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JWKS'
+  /.well-known/jwks/:
+    get:
+      description: >-
+        This specific pathname is Mandatory, exact pathname has to be specified in `OIDCConfiguration.jwks_uri`.
+        This endpoint returns JSON Web Keys to be used as public keys for verifying OIDC ID Tokens, responses and encrypting requests.
+      tags:
+        - Discovery
+      summary: JSON Web Keys Discovery
+      externalDocs:
+        description: '[RFC7517] JSON Web Key (JWK)'
+        url: https://tools.ietf.org/html/rfc7517
 
+      responses:
+        '200':
+          description: JWKS
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JWKS'
 components:
   headers:
     location:
@@ -2308,12 +2333,12 @@ components:
           items:
             type: string
             enum:
+              - loa4
               - loa3
               - loa2
             example: [ 'loa2', 'loa3' ]
           description: JSON array containing a list of the Authentication Context Class References that this OP supports.
           example: [ "loa4"]
-          description: List of supported authentication context classes
         subject_types_supported:
           type: array
           items:
@@ -2342,7 +2367,6 @@ components:
           items:
             type: string
           example: [ "ECDH-ES"]
-          description: List of supported encryption algorithms for ID tokens
         id_token_encryption_enc_values_supported:
           allOf:
             - $ref: '#/components/schemas/JWEEnc'
@@ -2351,7 +2375,6 @@ components:
           items:
             type: string
           example: [ "A256GCM"]
-          description: List of supported encryption encodings for ID tokens
         userinfo_signing_alg_values_supported:
           allOf:
             - $ref: '#/components/schemas/JWSDefaultAlg'
@@ -2400,7 +2423,6 @@ components:
               - client_secret_basic
               - tls_client_auth
               - self_signed_tls_client_auth
-              - attest_jwt_client_auth
           description: >-
             JSON array containing a list of Client Authentication methods supported by this Token Endpoint.
             Option `private_key_jwt` is described in Section 9 of OpenID Connect Core 1.0 [OpenID.Core].

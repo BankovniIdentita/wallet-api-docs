@@ -3,7 +3,7 @@ info:
   title: OpenID for Verifiable Credential Issuance API
   description: |
     This API is based on the [OpenID for Verifiable Credential Issuance](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) specification (version 1.0).
-  version: 1.0.1
+  version: 1.0.2
 servers:
   - url: 'https://issuer.example.com'
 paths:
@@ -236,9 +236,9 @@ components:
         batch_credential_issuance:
           type: object
           properties:
-
             batch_size:
-              type: int
+              type: integer
+
         credential_configurations_supported:
           type: object
           additionalProperties:
@@ -274,7 +274,7 @@ components:
             display:
               type: array
               items:
-                $red: '#/components/schemas/CredentialDisplay'
+                $ref: '#/components/schemas/CredentialDisplay'
             claims:
               type: array
               items:
@@ -288,8 +288,7 @@ components:
       properties:
         grantType:
           type: string
-          format: enum
-          values:
+          enum:
             - "AUTHORIZATION_CODE"
         credentialConfigId:
           type: array

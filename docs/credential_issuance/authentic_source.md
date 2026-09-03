@@ -21,10 +21,10 @@ Please note that this manual is intended for developers and technical staff who 
 ## API requirements
 
 API of Wallet API authentic source needs to have following properties
-- fulfill required endpoints of authentic_source.yaml Open API description
+- fulfill required endpoints of authentic_source_api.yaml Open API description
 - provide one of 2 option of API authentication
   - OAuth/Open ID Connect (will be supported in future versions)
-  - Client Assertion by Wallet API issuer 
+  - OAuh2 Client Assertion by Wallet API issuer 
 - optionally can require mTLS – in that case Authentic Source is responsible for issuing client certificate
 
 In future we will also support Authentic Sources fulfilling API by ETSI TS 119 478
@@ -50,6 +50,7 @@ Please note that Authentic source needs to validate and  understand following cl
 - iss needs to be URL of Bank iD's Wallet API or your private instance
 - audience will be base URL of your Authentic Source
 - subject is Wallet API issuer id for audit purposes
+- note that accoring RFC 7521 assertionID in our case jti must be unique, therefore exp is not required 
 - scope will be credential configuration id, that authentic source needs to resolve to proped attributes that needs to be send in response
 - user_auth will be user authentication token. This might be one of 2 things:
   - map of claims with data returned from Wallet that Authentic Source needs to match to its data

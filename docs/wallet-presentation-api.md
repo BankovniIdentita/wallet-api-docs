@@ -278,7 +278,7 @@ Cache-Control: no-cache, no-store
 {
   "state": "1234",
   "status": "DONE",
-  "redirectUri": "https://wallet.stage.bankid.cz/oauth2/authorize?... ",
+  "redirect_uri": "https://wallet.stage.bankid.cz/oauth2/authorize?... ",
 }
 ```
 
