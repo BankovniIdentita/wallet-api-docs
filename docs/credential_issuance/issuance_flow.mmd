@@ -25,7 +25,7 @@ sequenceDiagram
     EUDIW --> WalletAPI: /.well-known/oauth-authorization-server
     activate WalletAPI
     WalletAPI -->> EUDIW: Authorization server metadata
-    EUDIW --> WalletAPI: POST /oauth/pushed-auth with client attestation & DPoP
+    EUDIW --> WalletAPI: POST /oauth2/pushed-auth with client attestation & DPoP
     activate WalletAPI
     WalletAPI --> WalletAPI: validate client attestation
     WalletAPI -->> EUDIW: PAR response

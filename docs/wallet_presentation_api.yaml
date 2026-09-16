@@ -4,6 +4,8 @@ info:
   version: 1.3.2
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.3
+      * Add explanation to /callback response behaviour
     * Version 1.3.2
       * Housekeeping
     * Version 1.3.1
@@ -338,7 +340,11 @@ paths:
               schema:
                 properties:
                   redirect_uri:
-                    description: Uri for original User Agent, Wallet uses this URI to redirect in user's device. Used in same device flows.
+                    description: >- 
+                      Uri for original User Agent,
+                      Wallet uses this URI to redirect in user's device in same device flows or DC API flows,
+                      where it contains original authorization uri for finishing authentication with Wallet.
+                      In cross device flows this redirect_uri contains url to dummy thank you page. 
 
   /oauth2/token:
     post:
@@ -570,15 +576,22 @@ paths:
             text/html:
               schema:
                 description: HTML page with custom page for Wallet deeplink, QR code or DC API
-
                 type: string
-
             application/json:
               schema:
                 $ref: '#/components/schemas/login'
               examples:
                 userInfo:
                   $ref: '#/components/examples/login'
+        '302':
+          description: 'Deep link for same device redirect flows'
+          headers:
+            Location:
+              description: URI with deep link to configured OpenID4VP/HAIP scheme
+              schema:
+                type: string
+                format: uri
+              example: haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&request_uri=https://wallet.stage.bankid.cz/request.jwt/UERwEbTMfg2C7nyGjIQiamVhhjs8hdiq69Xymlj5Qa4
         '401':
           description: 'Unauthorized response when cookies for request was not sent or request is not initialized'
           headers:
@@ -593,10 +606,6 @@ paths:
               example:
                 error: FORBIDDEN
                 error_description: 'Cookies for request was not sent or request is not initialized'
-
-
-
-
 
   /userinfo:
     get:

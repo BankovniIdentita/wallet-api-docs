@@ -4,7 +4,7 @@ sequenceDiagram
     participant WalletAPI
     participant EUDIW
     participant MobileBrowser
-
+    note right of ServiceProvider: This describes cross-device flow
     activate ServiceProvider
     ServiceProvider->>WalletAPI: POST /pushed-auth
     Note left of ServiceProvider: Pushed auth request
@@ -13,12 +13,13 @@ sequenceDiagram
     ServiceProvider ->> WalletAPI: GET /auth with request_id from PAR response
     activate WalletAPI
     WalletAPI -->> ServiceProvider: 302 /login
-    ServiceProvider ->> WalletAPI: /login?isApi=true
+    ServiceProvider ->> WalletAPI: /login Accept: application/json
     activate WalletAPI
     WalletAPI -->> ServiceProvider: json with Wallet Request data
     deactivate WalletAPI
     ServiceProvider->>ServiceProvider: display QR code / link
     loop ServiceProvider polling
+        note left of WalletAPI: Polling is only if flow is cross-device flow
         ServiceProvider->>WalletAPI: /status
         activate WalletAPI
         WalletAPI-->>ServiceProvider: status

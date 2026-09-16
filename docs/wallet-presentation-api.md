@@ -1,5 +1,6 @@
 # Wallet API documentation
 ## History 
+- Version: 0.0.4 - Added clarifications as feedback from implementers
 - Version: 0.0.3 - Fixes and typos
 - Version: 0.0.2 - Update API based on experiences from LSPs 
 - Version: 0.0.1 - Filip's first notices
@@ -142,9 +143,10 @@ Host: wallet.stage.bankid.cz
 ```
 
 Valid auth request is processed into OpenID4VP request and depending on scopes following is done:
-- scopes are transform one of two ways:
+- scopes are transform one of three ways:
   - if bankid scopes are used, scopes are validated against registered scopes
   - if wallet scopes are used (form namespace:claim), scopes are not validated and are directly processed
+  - if custom dcql query scope is used, it shall be only scope in request
 - Please note that combining bankid scopes and wallet scopes is not supported right now
 - after validation scopes are transformed into DCQL (or temporarily for LSPs Presentation Defintion, depends on profile used in auth request)
   - also signed JWT is created for request with identifier
@@ -171,6 +173,7 @@ Client's of Wallet API may also use Pushed Authorization Requests (PAR) to obtai
 RAR is supported mainly for 
 - Initiation of payment transaction
 - Initiation of issuing flow using authorization_details instead of scopes
+- Support of QES
 
 PAR may be combined with DPoP for sender bounded E2E flows 
 
@@ -228,7 +231,8 @@ This API are used by Service Provider and internal browser page to handle Wallet
 Exposed by the **Wallet API**.
 
 ### GET /request.jwt/{reuqest_id}
-API for getting JWT for Wallet interaction. Used by Service Provider to initiate Wallet interaction via DC API
+API for getting JWT for Wallet interaction. Used by Service Provider to initiate Wallet interaction via DC API.
+Please note that if isdcapi query parameters is ommited, response of such call is not usable for DC API initiation. 
 ```http
 GET /request.jwt/1234?isdcapi=true HTTP/1.1
 Host: wallet.stage.bankid.cz
@@ -246,7 +250,10 @@ Content-Type: application/oauth-authz-req+jwt
 
 
 ### GET /request/status
-Polling URL for checking status of Wallet interaction. If Wallet interaction is finished, status is DONE and redirect_uri is redturned 
+Polling URL for checking status of Wallet interaction. 
+If Wallet interaction is finished, status is DONE and redirect_uri is returned. 
+This endpoint is used only in flow is cross/device flow in practice that means that user is going from browser to Wallet and back.
+Technically it means that for cross-device flows client's redirect uri has https scheme.
 
 ```http
 GET /request/status?state=1234&client_id=D40D25DB-C330
@@ -295,7 +302,7 @@ POST /callback HTTP/1.1
 Host: bankid.cz
 Content-Type: application/x-www-form-urlencoded
 
-state=authorization_code
+state=<state from auth request>
 &body=<encrypted JWT as response from DC API>
 ```
 
@@ -309,7 +316,7 @@ Pragma: no-cache
 DPoP-nonce: 1234567890
 
 {
-  "redirect_uri": "https://wallet.stage.bankid.cz/thank-you",
+  "redirect_uri": "https://wallet.stage.bankid.cz/oauth2/authorize?",
 }
 
 ```
@@ -384,7 +391,7 @@ Userinfo endpoint is used to retrieve information send by Wallet to backend.
 Backend processes returned vp_token with disclosed presentations and transforms it to plain JSON structure. 
 You may get the complete vp_token details from the `/vptoken` endpoint.
 Authenticated by access_token from token endpoint.
-Please note that currently endpoint does not returns data as signed or encrypted JWT opposed to current Bank iD interface
+Please note that currently endpoint does not return data as signed or encrypted JWT opposed to current Bank iD interface
 
 ```http
 GET /userinfo HTTP/2
@@ -430,7 +437,7 @@ DPoP-nonce: 1234567890
 ```
 
 ## GET /vptoken
-Returns decrypted presentations as JSON array, each element contains sigle presentation in mdoc or SD-JWT format. 
+Returns decrypted presentations as JSON array, each element contains single presentation in mdoc or SD-JWT format. 
 Authenticated by access_token from token endpoint. 
 
 ```http

@@ -5,7 +5,7 @@ sequenceDiagram
     participant WalletAPI
     participant EUDIW
     participant MobileBrowser
-
+    note right of ServiceProvider: "This describes cross-device flow <br/> with Wallet interaction with <br/>broswer interacting with Wallet API's page"
     alt Auth endpoint GET usage
         ServiceProvider-->>Browser: 302 /auth
         activate Browser
@@ -46,7 +46,6 @@ sequenceDiagram
     activate Browser
     Browser->>Browser: polling auth status = DONE
 
-    deactivate WalletAPI
     Browser->>WalletAPI: GET /redirect_uri from stauts response
     activate WalletAPI
     WalletAPI-->>Browser: 302 original callback uri with code

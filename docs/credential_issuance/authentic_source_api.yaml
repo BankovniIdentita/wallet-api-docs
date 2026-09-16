@@ -6,7 +6,7 @@ info:
     Endpoints advertised by /.well-known/authentic-source endpoint are actual one, that are exposed by Authentic source
     Paths in documentation are illustrative
 
-  version: 1.0.1
+  version: 1.0.2
 servers:
   - url: 'https://authentic-source.bankid.cz'
 paths:
@@ -29,7 +29,7 @@ paths:
       summary: Retrieve credential authentic source
       description: Retrieve credential authentic source
       security:
-        - BearerAuth: [ ]
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Successful response
@@ -69,7 +69,7 @@ paths:
         Endpoint also may return credential identifiers for multiple different data sets.
 
       security:
-        - BearerAuth: [ ]
+        - bearerAuth: [ ]
 
       responses:
         '200':

@@ -1,0 +1,60 @@
+sequenceDiagram
+    autonumber
+    participant ServiceProvider
+    participant ServiceProviderApp
+    participant WebView
+    participant WalletAPI
+    participant EUDIW
+
+    note right of ServiceProvider: This describes cross-device flow
+    activate ServiceProvider
+    ServiceProvider->>WalletAPI: POST /pushed-auth, redirect uri scheme is not https
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: 200 PAR response
+    deactivate WalletAPI
+    ServiceProvider ->> ServiceProviderApp: Send request_uri for app
+    ServiceProviderApp -->> WebView: GET /auth with request_id from PAR response
+    WebView ->> WalletAPI: GET /auth with request_id from PAR response
+    activate WalletAPI
+    WalletAPI -->> WebView: 302 /login
+    WebView ->> WalletAPI: /login
+    activate WalletAPI
+    WalletAPI -->> WebView: Deeplink for Wallet
+    deactivate WalletAPI
+    WebView->>EUDIW: open Wallet's OpenID4VP intent
+
+    deactivate ServiceProvider
+
+    activate EUDIW
+    EUDIW->>WalletAPI: GET or POST /request.jwt/{request_id}
+    activate WalletAPI
+        WalletAPI -->> EUDIW: Wallet Request Object
+        deactivate WalletAPI
+    EUDIW->>EUDIW: get consent and prepare VP response
+
+    EUDIW->>WalletAPI: POST /callback
+    activate WalletAPI
+    WalletAPI-->>EUDIW: redirectUri
+    deactivate WalletAPI
+
+    EUDIW-->> WebView: 302 redirectUri to original /oauth2/authorize
+    activate WebView
+    WebView->>WalletAPI: GET redirect to /oauth2/authorize
+    activate WalletAPI
+    WalletAPI-->>WebView: redirect to original redirect uri with code
+    WebView ->> ServiceProviderApp: deeplink to intent with code
+    deactivate WalletAPI
+    deactivate EUDIW
+
+    ServiceProviderApp->>ServiceProvider: return code from authentication
+    activate ServiceProvider
+
+    ServiceProvider->>WalletAPI: /token
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: TokenResponse
+    deactivate WalletAPI
+    ServiceProvider->>WalletAPI: /userinfo
+    activate WalletAPI
+    WalletAPI-->>ServiceProvider: UserInfoResponse with custom claims
+    deactivate WalletAPI
+    deactivate ServiceProvider
