@@ -2,6 +2,7 @@
 
 ### Changelog
 
+- 0.0.2 - Clarification on user_auth content and creation. Author: @filip-hladky
 - 0.0.1 - First draft for review by partners. Author: @filip-hladky
     
 ## Introduction
@@ -42,15 +43,31 @@ The following code describes structure of client assertion sent by Wallet API is
             .jwtID(UUID.randomUUID().toString())
             .subject(issueriD)
             .claim("scope", credentialConfigurationId)
-            .claim("credential_identifier", "my-credential-identifier")
+            .claim("credential_identifier", "my-credential-identifier") // optional 
             .claim("issuer_state", issuerState)
             .claim("user_auth", userAuth)
+
+Example of user_auth element filled from PID is following:
+
+        val userAuth = mutableMap()
+        userAuth["given_name"] = "Filip"
+        userAuth["familiy_name"] = "Hladky"
+        userAuth["date_of_birth"] = "1.9.2020"
+        userAuth["place_of_birth.city"] = "Praha" 
+
+Or if i.e. SCA attestation is used for presentation
+
+        userAuth["sub"] = "urn:uuid:cd0eb046-d2c8-46cf-bf6b-774b48ed09b7" // sub from SCA Attestation
+
+Or if previously /authorize endpoint was called 
+
+        userAuth["token"] = "ejY...." // token from authorize response 
 
 Please note that Authentic source needs to validate and  understand following claims
 - iss needs to be URL of Bank iD's Wallet API or your private instance
 - audience will be base URL of your Authentic Source
 - subject is Wallet API issuer id for audit purposes
-- note that accoring RFC 7521 assertionID in our case jti must be unique, therefore exp is not required 
+- note that according RFC 7521 AssertionID in our case jti must be unique, therefore exp is not required 
 - scope will be credential configuration id, that authentic source needs to resolve to proped attributes that needs to be send in response
 - user_auth will be user authentication token. This might be one of 2 things:
   - map of claims with data returned from Wallet that Authentic Source needs to match to its data
@@ -59,6 +76,11 @@ Please note that Authentic source needs to validate and  understand following cl
 - credential_identifier claim is optional and can be used to identify credential in case of multiple credentials with different data sets are issued by Issuer
 Moreover JWT is singed by private key of Issuer. Signature MUST be validated by public key that needs to be resolved at .well-known/jwks/{issuerId} url 
 
+Agreement on element is user_auth  between Issuer and Authentic Source is done out-of-band 
+meaning that issuer has configuration of required attestations and attributes that are asked from Wallet, 
+then flattens it to simple flat Map<String, *>, where * is primitive type (means no nested map) 
+and sends it to Authentic Source in Client Assertion.
+ 
 ### Attributes matching and Wallet request by Authentic source
 
 Issuer requests some credentials from Wallet for Authentic Source to match to it's own internal data. 
@@ -66,7 +88,6 @@ In this first iteration we assume that Issuer will request following data
 - attributes from PID for cross-border matching by CIR (first name, last name, date of birth, country, PID metadata)
 - attributes from Czech Pub-EAA (once published)
 - SUA/SCA in case Wallet is already onboarded and used for login
-- WUA for issuance
 
 Authentic Source must match those data from Wallet to it's internal database 
 and resolve by its own configuration which attributes will be returned 
