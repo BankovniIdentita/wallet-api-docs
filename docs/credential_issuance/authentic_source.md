@@ -25,7 +25,7 @@ API of Wallet API authentic source needs to have following properties
 - fulfill required endpoints of authentic_source_api.yaml Open API description
 - provide one of 2 option of API authentication
   - OAuth/Open ID Connect (will be supported in future versions)
-  - OAuh2 Client Assertion by Wallet API issuer 
+  - OAuth2 Client Assertion by Wallet API issuer 
 - optionally can require mTLS – in that case Authentic Source is responsible for issuing client certificate
 
 In future we will also support Authentic Sources fulfilling API by ETSI TS 119 478
