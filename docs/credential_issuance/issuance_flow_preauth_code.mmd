@@ -1,0 +1,47 @@
+sequenceDiagram
+    autonumber
+    participant User
+    participant EUDIW
+    participant InitiatingParty
+    participant WalletAPI
+    participant AuthenticSource
+
+
+    User --> InitiatingParty: Add credentials to my Wallet
+    activate InitiatingParty
+    InitiatingParty --> WalletAPI: /oauth2/token - get AT for offer call with client_credentials grant
+    activate WalletAPI
+    WalletAPI -->> InitiatingParty: AT
+    InitiatingParty --> WalletAPI: /{issuer_id}/credential-offer
+    note right of WalletAPI: In this case Initiating Party sends also data<br/> for authorization to Authentic Source
+    activate WalletAPI
+    WalletAPI -->> InitiatingParty: offer uri
+    InitiatingParty --> InitiatingParty: Display offer as QR code or as link for deeplink
+    User --> User: Scan QR code / init Wallet with deep link
+    deactivate InitiatingParty
+
+    activate EUDIW
+    EUDIW --> WalletAPI: /.well-known/openid-credential-issuer/{issuer_id}
+    activate WalletAPI
+    WalletAPI -->> EUDIW: credential metadata
+
+    EUDIW --> WalletAPI: /.well-known/oauth-authorization-server
+    activate WalletAPI
+    WalletAPI -->> EUDIW: Authorization server metadata
+
+    EUDIW --> WalletAPI: /oauth2/token with client attestation and DPoP, pre-authorized code grant is used
+    activate WalletAPI
+    opt credential identifier is supported
+        WalletAPI --> AuthenticSource: /api/authorize
+        activate AuthenticSource
+        AuthenticSource -->> WalletAPI: authorization token + credential identifiers
+    end
+    WalletAPI -->> EUDIW: AT + RT + optionally authorization detail ]
+
+    EUDIW --> WalletAPI: /{issuer_id}/credential with AT and DPoP
+    activate WalletAPI
+    WalletAPI --> AuthenticSource: /api/retrieve
+    activate AuthenticSource
+    AuthenticSource -->> WalletAPI: data for credential
+    WalletAPI -->> EUDIW: issued credentials for Wallet
+
