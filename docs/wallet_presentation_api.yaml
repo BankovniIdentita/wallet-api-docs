@@ -983,11 +983,6 @@ components:
       schema:
         type: string
         example: 3cf56e5d-40b0-45b5-a329-8c27741947b4
-    auth_authorization_detail:
-      name: authorization_detail
-      in: query
-      required: false
-      description: Authorization detail object according to Rich Authorization Request RFC and CSC v2 API
     end_session_post_logout_redirect_uri:
       name: post_logout_redirect_uri
       in: query
