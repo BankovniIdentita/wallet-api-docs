@@ -1,9 +1,12 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.3.2
+  version: 1.3.4
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.4
+      * Fix token endpoint - grants and optionality of refresh_token in response
+      * Small adjustments
     * Version 1.3.3
       * Add explanation to /callback response behaviour
     * Version 1.3.2
@@ -381,6 +384,7 @@ paths:
             schema:
               oneOf:
                 - $ref: '#/components/schemas/AuthorizationCodeTokenRequest'
+                - $ref: '#/components/schemas/TokenCommonPartRequest'
               description: |-
                 In case of issuing access token from authorization code:
                  - [RFC6749 - 4.1.3. Access Token Request](https://tools.ietf.org/html/rfc6749#section-4.1.3)
@@ -554,7 +558,7 @@ paths:
         - walletRequestId for requesting object via /request.jwt endpoint for DC API
         - used wallet scheme and full walletRequestUri fot initiating wallet via deeplink
         - pollingUrl for polling status
-        - resultUrl for calling finalization of authorization
+        - resultUrl (obsolete, will be removed)
       tags:
         - Authorization Request
       parameters:
@@ -830,7 +834,6 @@ paths:
           required: true
           description: >-
             Entity ID of the wallet - usually client_id of Verifier or Issuer, 
-            If ommited - defaults to default client_id keys.
           schema:
             type: string
       responses:
@@ -845,7 +848,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/JWKS'
-  /.well-known/jwks/:
+  /.well-known/jwks:
     get:
       description: >-
         This specific pathname is Mandatory, exact pathname has to be specified in `OIDCConfiguration.jwks_uri`.
@@ -1391,9 +1394,7 @@ components:
       required:
         - access_token
         - token_type
-        - refresh_token
         - expires_in
-        - id_token
       properties:
         access_token:
           description: 'Tz  e access token issued by the authorization server.'
@@ -1408,7 +1409,7 @@ components:
         refresh_token:
           description: 'Tz  e refresh token, which can be used to obtain new access tokens using the same authorization grant.'
           type: string
-          example: '1f703z  5f-75da-4b58-a1b0-e315700e4227'
+          example: '1f703z 5f-75da-4b58-a1b0-e315700e4227'
         expires_in:
           description: 'Tz  e lifetime in seconds of the access token.  For example, the value "3600" denotes that the access token will expire in one hour from the time the response was generated.'
           type: integer
@@ -1427,43 +1428,7 @@ components:
           description: 'Processed transaction data passed to Wallet API in /auth request. Same encoded JSON as string is returned here as result of authorization in Wallet'
           type: string
           format: encodedJson
-    AccessTokenCSCResponse:
-      description:
-        The authorization server issues an access token and optional refresh token, and constructs the response by adding the following parameters
-        to the entity-body of the HTTP response with a 200 (OK) status code.
-      externalDocs:
-        description: '[RFC6749] - The OAuth 2.0 Authorization Framework: - 5.1.  Successful Response'
-        url: https://tools.ietf.org/html/rfc6749#section-5.1
-      required:
-        - access_token
-        - token_type
-        - refresh_token
-        - expires_in
-        - id_token
-        - authorization_detail
-      properties:
-        access_token:
-          description: 'Tz  e access token issued by the authorization server.'
-          type: string
-          example: 'c03e9z  7c-aa96-4b3f-ad0c-98626833145d'
-        token_type:
-          description: 'Tz  e type of the token issued. Value is case insensitive.'
-          type: string
-          enum:
-            - Bearer
-          example: 'Bearer'
-        expires_in:
-          description: 'Tz  e lifetime in seconds of the access token.  For example, the value "3600" denotes that the access token will expire in one hour from the time the response was generated.'
-          type: integer
-          format: int64
-          example: 6000
-        scope:
-          description: 'If scope are not identical as requested by client.'
-          type: string
-          example: 'openid offline_access profile.addresses'
-        authorization_detail:
-          type: object
-          description: authorization_detail from  auth request
+
     AuthorizationRequestReq:
         allOf:
           - $ref: '#/components/schemas/ClientSecretPost'
@@ -2055,17 +2020,14 @@ components:
           description: client_id for polling and result
         walletRequestId:
           type: string
-          description: identifier of wallet request on backend for request.jwt paramsw
-        resultUrl:
-          type: string
-          description: url for result of wallet request
+          description: identifier of wallet request on backend for request.jwt params
         pollingUrl:
           type: string
           description: url for polling wallet request status for deeplink invocaiton
         walletRequestUri:
           type: string
-          description: full uri of wallet request for deeplink invocaiton of Wallet
-          example: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
+          description:  Uri of wallet request for deeplink composition or DC API invocaiton of Wallet
+          example: "https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
 
     userInfo:
       description: ''
@@ -2787,6 +2749,8 @@ components:
               enum:
                 - authorization_code
                 - refresh_token
+                - client_credentials
+                - urn:ietf:params:oauth:grant-type:pre-authorized_code
               example: 'authorization_code'
             redirect_uri:
               type: string
@@ -3494,7 +3458,6 @@ components:
         state: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
         clientId: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
         walletRequestId: RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8
-        resultUrl: "/result"
         pollingUrl: "/request/status"
         walletRequestUri: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
     userInfo:
