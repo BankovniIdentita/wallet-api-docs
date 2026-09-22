@@ -1450,7 +1450,7 @@ components:
               scope:
                 $ref: '#/components/parameters/auth_scope'
               authorization_detail:
-                $ref: '#/components/parameters/auth_authorization_detail'
+                $ref: '#/components/parameters/auth_authorization_details'
               redirect_uri:
                 $ref: '#/components/parameters/auth_redirect_uri'
               acr_values:
