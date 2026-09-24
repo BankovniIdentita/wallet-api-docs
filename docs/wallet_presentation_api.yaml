@@ -702,6 +702,71 @@ paths:
                 $ref: '#/components/schemas/traceId'
         '429':
           $ref: '#/components/responses/TooManyRequestError'
+  /vptoken:
+    get:
+      summary: Returns all verifiable presentations as array
+      description: |
+        Vp Token Endpoint is custom Resource protected by Access Token that return all presented Verifiable Presentations as array of string. 
+        SD-JWT presentations are returned as presented. 
+        mDoc presentation are returned in Base64 encoding.
+      security:
+        - Bearer: []
+      tags:
+        - Identity
+      responses:
+        '200':
+          description: 'OK'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+              example:
+                '["ejy....", "o2z..."]'
+        '401':
+          description: 'Unauthorized request'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/unauthorized'
+              example:
+                error: 'UNAUTHORIZED'
+                error_description: 'Invalid/missing access token'
+        '403':
+          description: 'Request was forbidden'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/forbidden'
+              example:
+                error: 'FORBIDDEN'
+                error_description: 'Authentication with an expired access token or bearer access token having insufficient privileges'
+        '429':
+          $ref: '#/components/responses/TooManyRequestError'
+        '500':
+          description: 'Internal Server Error'
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: '#/components/schemas/traceId'
+
+
 
   /profile:
     get:
