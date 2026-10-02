@@ -1,9 +1,11 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.3.4
+  version: 1.3.5
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.3.5
+      * Add Cookie headers and usage for /oauth2/authorize and /login
     * Version 1.3.4
       * Fix token endpoint - grants and optionality of refresh_token in response
       * Small adjustments
@@ -188,6 +190,11 @@ paths:
               description: Unique ID for each API call for support purposes.
               schema:
                 $ref: '#/components/schemas/traceId'
+            Set-Cookie:
+              description: Cookies for login authentication
+              schema:
+                type: string
+                example: JSESSIONID=abcde12345; Path=/; HttpOnly
             Location:
               description: |
                 Redirect response to endpoint specified in redirect_uri with parameters:
@@ -551,7 +558,7 @@ paths:
       description: |
         Endpoint for obtaining data for creating custom page for interaction with Wallet.
         This endpoint MUST be called with header Accept: application/json otherwise HTML page will be returned 
-        Please note that cookies from /oauth2/autorize endpoint MUST be attached to request,
+        Please note that cookies from /oauth2/authorize endpoint MUST be attached to request,
         Provides:
         - state
         - walletClientId as client_id for for wallet
@@ -561,6 +568,8 @@ paths:
         - resultUrl (obsolete, will be removed)
       tags:
         - Authorization Request
+      security:
+        - cookieAuth: []
       parameters:
         - name: Accept
           in: header
@@ -568,6 +577,7 @@ paths:
           schema:
             type: string
           example: 'Accept: application/json'
+        - name:
       responses:
         '200':
           description: 'OK response with returned data for custom login page'
@@ -3433,7 +3443,10 @@ components:
       type: apiKey
       name: Authorization
       in: header
-
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: JSESSIONID # cookie name
   responses:
     TokenErrorResponse:
       description: Request invalid
