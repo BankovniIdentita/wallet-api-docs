@@ -484,8 +484,8 @@ Content-Type: application/json;charset=utf-8
 
 {
   "namespaces": {
-    "some-test-namespace: {...},
-    "the-second-namespace: {...},
+    "some-test-namespace": {...},
+    "the-second-namespace": {...},
   }
 }
 ```
