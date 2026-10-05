@@ -456,3 +456,36 @@ Content-Type: application/json;charset=utf-8
   "o2d2ZXJzaW9uYzEuMGlk..."
 ]
 ```
+
+
+## GET /api/v1/validate
+Endpoint that validates an external token.
+Returns namespaces and values from parsed token.
+
+```http
+GET /api/v1/validate HTTP/2
+Host: bankid.cz
+Accept: application/json
+Authorization: Bearer c03e997c-aa96-4b3f-ad0c-98626833145d
+```
+```json
+{
+  "vp_tokens": [ "", "..." ],
+  "transaction_data": [ "", "..." ]
+}
+```
+
+### Response 200 OK
+Returns parsed data from token
+```http
+HTTP/2 200 OK
+Content-Type: application/json;charset=utf-8
+
+
+{
+  "namespaces": {
+    "some-test-namespace: {...},
+    "the-second-namespace: {...},
+  }
+}
+```
