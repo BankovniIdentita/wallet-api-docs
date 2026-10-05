@@ -109,6 +109,12 @@ paths:
         Getting notification about credential issuance from issuer.
       security:
         - bearerAuth: []
+      requestBody:
+        description: Pushed Notification Request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CredentialNotificationRequest"
       responses:
         "200":
           description: Successful response
@@ -204,6 +210,42 @@ components:
             - type: array
             - type: object
           description: Value of the attribute
+    CredentialNotificationRequest:
+      type: object
+      description: Request to send a notification to authentic source from issuer
+      required:
+        - credentials
+      properties:
+        credentials:
+          type: array
+          description: List with all credentials for the notification
+          items:
+            $ref: "#/components/schemas/CredentialNotificationAccum"
+
+    CredentialNotificationAccum:
+      type: object
+      description: Accumulated data for notification credentials info
+      requied:
+        - jti
+      properties:
+        jti:
+          type: String
+        status:
+          ref: "#/components/schemas/StatusListClaim"
+        key_hash:
+          type: String
+          description: Hash of the key
+    StatusListClaim:
+      type: object
+      required:
+        - url
+        - idx
+      properties:
+        url:
+          type: String
+          description: Url string of status claim
+        idx:
+          type: Long
     Error:
       type: object
       required:
