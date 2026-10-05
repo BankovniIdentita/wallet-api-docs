@@ -458,7 +458,7 @@ Content-Type: application/json;charset=utf-8
 ```
 
 
-## GET /api/v1/validate
+## POST /api/v1/validate
 Endpoint that validates an external token.
 Returns namespaces and values from parsed token.
 
