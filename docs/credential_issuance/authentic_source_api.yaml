@@ -1,66 +1,66 @@
 openapi: 3.1.0
 info:
   title: Authentic Source API
-  description: | 
+  description: |
     API expected by Wallet API from data providers
     Endpoints advertised by /.well-known/authentic-source endpoint are actual one, that are exposed by Authentic source
     Paths in documentation are illustrative
 
   version: 1.0.2
 servers:
-  - url: 'https://authentic-source.bankid.cz'
+  - url: "https://authentic-source.bankid.cz"
 paths:
   /.well-known/authentic-source:
     get:
       summary: Get the credential authentic source
-      description: >- 
+      description: >-
         Returns defined endpoints for authentic source.
         Endpoints advertised by this endpoint are actual one, that are exposed by authetic source
       responses:
-        '200':
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthenticSourceMetadata'
+                $ref: "#/components/schemas/AuthenticSourceMetadata"
 
   /retrieve:
     post:
       summary: Retrieve credential authentic source
       description: Retrieve credential authentic source
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RetrieveResponse'
-        '400':
+                $ref: "#/components/schemas/RetrieveResponse"
+        "400":
           description: Bad request, client error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: Unauthorized, invalid token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden, access denied, in case of invalid audience
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '500':
+                $ref: "#/components/schemas/Error"
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
   /authorize:
     post:
       summary: Match and authorize user's data from Wallet
@@ -69,39 +69,74 @@ paths:
         Endpoint also may return credential identifiers for multiple different data sets.
 
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
 
       responses:
-        '200':
+        "200":
           description: Successful response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthorizeResponse'
-        '400':
+                $ref: "#/components/schemas/AuthorizeResponse"
+        "400":
           description: Bad request, client error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: Unauthorized, invalid token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: Forbidden, access denied, in case of invalid audience
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '500':
+                $ref: "#/components/schemas/Error"
+        "500":
           description: Internal server error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
+  /api/notification:
+    post:
+      summary: Notify authentic source about credential issuance.
+      description: >-
+        Getting notification about credential issuance from issuer.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Successful response
+        "400":
+          description: Bad request, client error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized, invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden, access denied, in case of invalid audience
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
 components:
   schemas:
     AuthenticSourceMetadata:
@@ -133,7 +168,7 @@ components:
         attributes:
           type: array
           items:
-            $ref: '#/components/schemas/Attribute'
+            $ref: "#/components/schemas/Attribute"
 
     AuthorizeResponse:
       type: object
@@ -150,7 +185,7 @@ components:
             List of credential identifiers for multiple different data sets.
           items:
             type: string
-          example: ['credential_identifier_1', 'credential_identifier_2']
+          example: ["credential_identifier_1", "credential_identifier_2"]
     Attribute:
       type: object
       required:
@@ -186,4 +221,3 @@ components:
 
 security:
   - bearerAuth: []
-
