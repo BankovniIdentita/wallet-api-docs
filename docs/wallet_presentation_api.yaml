@@ -577,7 +577,6 @@ paths:
           schema:
             type: string
           example: 'Accept: application/json'
-        - name:
       responses:
         '200':
           description: 'OK response with returned data for custom login page'
