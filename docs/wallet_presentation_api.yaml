@@ -1,9 +1,11 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.3.5
+  version: 1.4.0
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.4.0
+      * Add endpoint for external vp_token validation
     * Version 1.3.5
       * Add Cookie headers and usage for /oauth2/authorize and /login
     * Version 1.3.4
