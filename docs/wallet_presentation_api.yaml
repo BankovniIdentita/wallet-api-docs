@@ -776,7 +776,62 @@ paths:
                 $ref: '#/components/schemas/traceId'
 
 
-
+  /api/v1/validate:
+    post:
+      summary: External token validation and returning parsed data from token
+      description: |
+        The validate endpoint gets external token and validates it. After that it returns parsed data from token.
+      security:
+        - Bearer: []
+      responses:
+        "200":
+          description: "OK"
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: "#/components/schemas/traceId"
+          content:
+            application/json:
+              schema:
+                ref: "#/componens/schemas/PresentationClaims"
+        "401":
+          description: "Unauthorized request"
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: "#/components/schemas/traceId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/unauthorized"
+              example:
+                error: "UNAUTHORIZED"
+                error_description: "Invalid/missing access token"
+        "403":
+          description: "Request was forbidden"
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: "#/components/schemas/traceId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/forbidden"
+              example:
+                error: "FORBIDDEN"
+                error_description: "Authentication with an expired access token or bearer access token having insufficient privileges"
+        "429":
+          $ref: "#/components/responses/TooManyRequestError"
+        "500":
+          description: "Internal Server Error"
+          headers:
+            traceId:
+              description: Unique ID for each API call for support purposes.
+              schema:
+                $ref: "#/components/schemas/traceId"
   /profile:
     get:
       summary: Returns an extended (down to AML) set of authenticated End-User information.
@@ -3121,6 +3176,16 @@ components:
             uses multiple issuers, collisions MUST be prevented among values produced by different issuers as well.  The `jti` claim can be used
             to prevent the JWT from being replayed.  The `jti` value is a case-sensitive string.
           example: 95E3440A-C986-4E8B-9678-605F9B2FE7C5
+
+    PresentationClaims:
+      type: object
+      description: >-
+        Map with parsed claims from external token. Response has namespaces and values from that namespaces.
+      additionalProperties: true
+      example:
+        "<namespace-1>":
+          someKey: "someValue"
+        "<namespace-2>": 42
 
     userinfo_claims:
       description: >
