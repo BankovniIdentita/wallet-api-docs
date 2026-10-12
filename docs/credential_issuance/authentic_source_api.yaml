@@ -15,7 +15,7 @@ paths:
       summary: Get the credential authentic source
       description: >-
         Returns defined endpoints for authentic source.
-        Endpoints advertised by this endpoint are actual one, that are exposed by authetic source
+        Endpoints advertised by this endpoint are actual one, that are exposed by authentic source
       responses:
         "200":
           description: Successful response
@@ -225,15 +225,15 @@ components:
     CredentialNotificationAccum:
       type: object
       description: Accumulated data for notification credentials info
-      requied:
+      required:
         - jti
       properties:
         jti:
-          type: String
+          type: string
         status:
           ref: "#/components/schemas/StatusListClaim"
         key_hash:
-          type: String
+          type: string
           description: Hash of the key
     StatusListClaim:
       type: object
@@ -242,10 +242,10 @@ components:
         - idx
       properties:
         url:
-          type: String
+          type: string
           description: Url string of status claim
         idx:
-          type: Long
+          type: integer
     Error:
       type: object
       required:
