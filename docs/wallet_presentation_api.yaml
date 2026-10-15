@@ -1,9 +1,12 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.4.1
+  version: 1.4.2
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.4.2
+      * Added status REQUEST_READ
+      * Housekeeping 
     * Version 1.4.1
       * Fix missing body for /api/v1/validate endpoint
     * Version 1.4.0
@@ -126,6 +129,9 @@ paths:
 
       tags:
         - Authorization Request
+      security:
+        - {}
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/auth_request_uri'
         - $ref: '#/components/parameters/auth_redirect_uri'
@@ -1642,6 +1648,7 @@ components:
             - IN_PROGRESS
             - DONE
             - EXPIRED
+            - REQUEST_READ
         state:
           type: string
           description: State from request
@@ -2880,7 +2887,6 @@ components:
         - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
         - required:
             - grant_type
-            - redirect_uri
           properties:
             grant_type:
               type: string
@@ -2895,7 +2901,8 @@ components:
               type: string
               format: uri
               description: >-
-                If the "redirect_uri" parameter was included in the authorization request. Their values MUST be identical.
+                If the "redirect_uri" parameter was included in the authorization request. 
+                Their values MUST be identical.
               example: 'https://rp.example.com/callback'
 
     ClientSecretPost:
@@ -3621,7 +3628,7 @@ components:
         clientId: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
         walletRequestId: RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8
         pollingUrl: "/request/status"
-        walletRequestUri: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
+        walletRequestUri: "https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
     userInfo:
       value:
         sub: 23f1ac00-5d54-4169-a288-794ae2ead0c4
