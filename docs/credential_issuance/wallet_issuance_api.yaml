@@ -3,7 +3,7 @@ info:
   title: OpenID for Verifiable Credential Issuance API
   description: |
     This API is based on the [OpenID for Verifiable Credential Issuance](https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html) specification (version 1.0).
-  version: 1.0.2
+  version: 1.0.3
 servers:
   - url: 'https://issuer.example.com'
 paths:
@@ -298,7 +298,7 @@ components:
           type: boolean
         matching:
           $ref: '#/components/schemas/Matching'
-     Matching:
+    Matching:
           description: |
             Data used to match the credential offer to a specific user.
             The structure depends on the value of `type`.
@@ -449,4 +449,3 @@ components:
           type: string
         error_description:
           type: string
-
