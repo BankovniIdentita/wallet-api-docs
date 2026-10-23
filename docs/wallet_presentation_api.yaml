@@ -743,7 +743,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/securitySchemes/VpTokenResponse'
+                $ref: '#/components/schemas/VpTokenResponse'
         '401':
           description: 'Unauthorized request'
           headers:
@@ -1610,9 +1610,9 @@ components:
 
     VpTokenResponse:
       required:
-        - vptokens
+        - vp_tokens
       properties:
-        vptokens:
+        vp_tokens:
           items:
             type: string
           example:
