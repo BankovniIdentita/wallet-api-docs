@@ -296,6 +296,50 @@ components:
             type: string
         txCodeRequired:
           type: boolean
+        matching:
+          $ref: '#/components/schemas/Matching'
+     Matching:
+          description: |
+            Data used to match the credential offer to a specific user.
+            The structure depends on the value of `type`.
+          oneOf:
+            - $ref: '#/components/schemas/PidMatching'
+            - $ref: '#/components/schemas/AuthTokenMatching'
+          discriminator:
+            propertyName: type
+            mapping:
+              pid: '#/components/schemas/PidMatching'
+              auth_token: '#/components/schemas/AuthTokenMatching'
+
+    PidMatching:
+      type: object
+      required:
+        - type
+        - pidHash
+      properties:
+        type:
+          type: string
+          const: pid
+        pidHash:
+          type: string
+          description: Hash of the user's PID.
+      additionalProperties: false
+
+    AuthTokenMatching:
+      type: object
+      required:
+        - type
+        - auth_token
+      properties:
+        type:
+          type: string
+          const: auth_token
+        auth_token:
+          type: string
+          description: Authentication token identifying the user.
+      additionalProperties: false
+
+          
     CredentialOfferResponse:
       type: object
       properties:
