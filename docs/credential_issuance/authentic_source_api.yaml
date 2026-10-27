@@ -5,8 +5,9 @@ info:
     API expected by Wallet API from data providers
     Endpoints advertised by /.well-known/authentic-source endpoint are actual one, that are exposed by Authentic source
     Paths in documentation are illustrative
-
-  version: 1.0.2
+    * Version 1.0.3 
+      * Fix mandatory property in CredentialRevokedNotification
+  version: 1.0.3
 servers:
   - url: "https://authentic-source.bankid.cz"
 paths:
@@ -165,6 +166,11 @@ components:
           description: >-
             Endpoint to authorize credential retrieval from authentic source, used for credential_identifiers
           example: https://authentic.example.com/authorize
+        notification_endpoint:
+          type: string
+          description: >-
+            Endpoint to receive notifications about credentials - like Credential created or Credential revoked
+          example: https://authentic.example.com/notify
 
     RetrieveResponse:
       type: object
@@ -213,28 +219,49 @@ components:
     CredentialNotificationRequest:
       type: object
       description: Request to send a notification to authentic source from issuer
+      oneOf:
+        -  $ref: "#/components/schemas/CredentialIssuedNotification"
+        -  $ref: "#/components/schemas/CredentialRevokedNotification"
+
+    CredentialIssuedNotification:
+      type: object
       required:
+        - issuer_state
         - credentials
       properties:
+        issuer_state:
+          type: string
+          description: Issuer state from original offer for paring
         credentials:
           type: array
           description: List with all credentials for the notification
           items:
             $ref: "#/components/schemas/CredentialNotificationAccum"
-
     CredentialNotificationAccum:
       type: object
       description: Accumulated data for notification credentials info
       required:
         - jti
+        - exp
       properties:
         jti:
           type: string
         status:
-          ref: "#/components/schemas/StatusListClaim"
+          $ref: "#/components/schemas/StatusListClaim"
         key_hash:
           type: string
           description: Hash of the key
+        exp:
+          type: integer
+          description: Actual exp written into credentials
+    CredentialRevokedNotification:
+      type: object
+      required:
+        - jti
+      properties:
+        jti:
+          type: string
+
     StatusListClaim:
       type: object
       required:
