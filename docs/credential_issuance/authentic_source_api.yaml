@@ -5,8 +5,9 @@ info:
     API expected by Wallet API from data providers
     Endpoints advertised by /.well-known/authentic-source endpoint are actual one, that are exposed by Authentic source
     Paths in documentation are illustrative
-
-  version: 1.0.2
+    * Version 1.0.3 
+      * Fix mandatory property in CredentialRevokedNotification
+  version: 1.0.3
 servers:
   - url: "https://authentic-source.bankid.cz"
 paths:
@@ -255,6 +256,8 @@ components:
           description: Actual exp written into credentials
     CredentialRevokedNotification:
       type: object
+      required:
+        - jti
       properties:
         jti:
           type: string
