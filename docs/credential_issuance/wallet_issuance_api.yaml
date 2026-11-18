@@ -290,18 +290,25 @@ components:
           type: string
           enum:
             - "AUTHORIZATION_CODE"
+            - "PRE_AUTHORIZED_CODE"
         credentialConfigId:
           type: array
           items:
             type: string
         txCodeRequired:
           type: boolean
+
     CredentialOfferResponse:
       type: object
+      required:
+        - offerUri
+        - issuerState
       properties:
         offerUri:
           type: string
-        issuer_state:
+        pinToDisplay:
+          type: string
+        issuerState:
           type: string
     CredentialDisplay:
       type: object

@@ -743,10 +743,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  type: string
-              example:
-                '["ejy....", "o2z..."]'
+                $ref: '#/components/schemas/VpTokenResponse'
         '401':
           description: 'Unauthorized request'
           headers:
@@ -1569,7 +1566,7 @@ components:
           type: string
           format: JWT
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-        authorization_detail:
+        authorization_details:
           description: 'Processed transaction data passed to Wallet API in /auth request. Same encoded JSON as string is returned here as result of authorization in Wallet'
           type: string
           format: encodedJson
@@ -1594,7 +1591,7 @@ components:
                 $ref: '#/components/parameters/auth_state'
               scope:
                 $ref: '#/components/parameters/auth_scope'
-              authorization_detail:
+              authorization_details:
                 $ref: '#/components/parameters/auth_authorization_details'
               redirect_uri:
                 $ref: '#/components/parameters/auth_redirect_uri'
@@ -1611,8 +1608,20 @@ components:
               code_challenge_method:
                 $ref: '#/components/parameters/auth_code_challenge_method'
 
-
-
+    VpTokenResponse:
+      required:
+        - vp_tokens
+      properties:
+        vp_tokens:
+          items:
+            type: string
+          example:
+            '["ejy....", "o2z..."]'
+        transaction_data:
+          items:
+            type: string
+          example: '[ "ejY...."]'
+          description: Base64 encoded transaction data as was sent by WAPI to Wallet in request.jwt
     AuthorizationRequestResponse:
       properties:
         request_uri:
