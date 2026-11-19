@@ -9,7 +9,7 @@ sequenceDiagram
     ServiceProvider->>WalletAPI: POST /pushed-auth
     Note left of ServiceProvider: Pushed auth request
     activate WalletAPI
-    WalletAPI-->>ServiceProvider: 200 PAR response
+    WalletAPI-->>ServiceProvider: 200 PAR response + Set-Cookie
     ServiceProvider ->> WalletAPI: GET /auth with request_id from PAR response
     activate WalletAPI
     WalletAPI -->> ServiceProvider: 302 /login
@@ -48,7 +48,7 @@ sequenceDiagram
     activate ServiceProvider
     ServiceProvider->>ServiceProvider: from polling auth status = DONE
     activate WalletAPI
-    ServiceProvider->>WalletAPI: GET /redirect_uri from /request/status response
+    ServiceProvider->>WalletAPI: GET /redirect_uri from /request/status response + Cookie from 2
     activate WalletAPI
     WalletAPI-->>ServiceProvider: 302 original callback uri with code
     deactivate WalletAPI

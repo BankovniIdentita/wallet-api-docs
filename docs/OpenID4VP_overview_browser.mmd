@@ -11,7 +11,7 @@ sequenceDiagram
         activate Browser
         Browser->>WalletAPI: GET /auth
         activate WalletAPI
-        WalletAPI-->>Browser: 302 /login
+        WalletAPI-->>Browser: 302 /login + Set-Cookie
         deactivate WalletAPI
         Browser->>WalletAPI: /login
         activate WalletAPI
@@ -46,7 +46,7 @@ sequenceDiagram
     activate Browser
     Browser->>Browser: polling auth status = DONE
 
-    Browser->>WalletAPI: GET /redirect_uri from stauts response
+    Browser->>WalletAPI: GET /redirect_uri from stauts response + auth Cookie from 3
     activate WalletAPI
     WalletAPI-->>Browser: 302 original callback uri with code
     deactivate WalletAPI

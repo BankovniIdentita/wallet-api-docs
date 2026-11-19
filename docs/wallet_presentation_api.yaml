@@ -1,9 +1,14 @@
 openapi: 3.0.0
 info:
   title: Bank iD Wallet APIs
-  version: 1.4.0
+  version: 1.4.2
   description: |
     Describes APIs to be implemented by Bank iD.
+    * Version 1.4.2
+      * Added status REQUEST_READ
+      * Housekeeping 
+    * Version 1.4.1
+      * Fix missing body for /api/v1/validate endpoint
     * Version 1.4.0
       * Add endpoint for external vp_token validation
     * Version 1.3.5
@@ -124,6 +129,9 @@ paths:
 
       tags:
         - Authorization Request
+      security:
+        - {}
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/auth_request_uri'
         - $ref: '#/components/parameters/auth_redirect_uri'
@@ -579,7 +587,6 @@ paths:
           schema:
             type: string
           example: 'Accept: application/json'
-        - name:
       responses:
         '200':
           description: 'OK response with returned data for custom login page'
@@ -736,10 +743,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  type: string
-              example:
-                '["ejy....", "o2z..."]'
+                $ref: '#/components/schemas/VpTokenResponse'
         '401':
           description: 'Unauthorized request'
           headers:
@@ -786,6 +790,12 @@ paths:
         The validate endpoint gets external token and validates it. After that it returns parsed data from token.
       security:
         - Bearer: []
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/ValidateRequest'
       responses:
         "200":
           description: "OK"
@@ -797,7 +807,7 @@ paths:
           content:
             application/json:
               schema:
-                ref: "#/componens/schemas/PresentationClaims"
+                $ref: "#/components/schemas/PresentationClaims"
         "401":
           description: "Unauthorized request"
           headers:
@@ -1556,7 +1566,7 @@ components:
           type: string
           format: JWT
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
-        authorization_detail:
+        authorization_details:
           description: 'Processed transaction data passed to Wallet API in /auth request. Same encoded JSON as string is returned here as result of authorization in Wallet'
           type: string
           format: encodedJson
@@ -1581,7 +1591,7 @@ components:
                 $ref: '#/components/parameters/auth_state'
               scope:
                 $ref: '#/components/parameters/auth_scope'
-              authorization_detail:
+              authorization_details:
                 $ref: '#/components/parameters/auth_authorization_details'
               redirect_uri:
                 $ref: '#/components/parameters/auth_redirect_uri'
@@ -1598,8 +1608,20 @@ components:
               code_challenge_method:
                 $ref: '#/components/parameters/auth_code_challenge_method'
 
-
-
+    VpTokenResponse:
+      required:
+        - vp_tokens
+      properties:
+        vp_tokens:
+          items:
+            type: string
+          example:
+            '["ejy....", "o2z..."]'
+        transaction_data:
+          items:
+            type: string
+          example: '[ "ejY...."]'
+          description: Base64 encoded transaction data as was sent by WAPI to Wallet in request.jwt
     AuthorizationRequestResponse:
       properties:
         request_uri:
@@ -1635,6 +1657,7 @@ components:
             - IN_PROGRESS
             - DONE
             - EXPIRED
+            - REQUEST_READ
         state:
           type: string
           description: State from request
@@ -2873,7 +2896,6 @@ components:
         - $ref: '#/components/schemas/PrivateKeyJwtAuthKeys'
         - required:
             - grant_type
-            - redirect_uri
           properties:
             grant_type:
               type: string
@@ -2888,7 +2910,8 @@ components:
               type: string
               format: uri
               description: >-
-                If the "redirect_uri" parameter was included in the authorization request. Their values MUST be identical.
+                If the "redirect_uri" parameter was included in the authorization request. 
+                Their values MUST be identical.
               example: 'https://rp.example.com/callback'
 
     ClientSecretPost:
@@ -3179,6 +3202,26 @@ components:
             uses multiple issuers, collisions MUST be prevented among values produced by different issuers as well.  The `jti` claim can be used
             to prevent the JWT from being replayed.  The `jti` value is a case-sensitive string.
           example: 95E3440A-C986-4E8B-9678-605F9B2FE7C5
+    ValidateRequest:
+      type: object
+      properties:
+        vp_tokens:
+          type: array
+          items:
+            type: string
+        transaction_data:
+          type: array
+          items:
+            type: string
+    PresentationClaims:
+      type: object
+      description: >-
+        Map with parsed claims from external token. Response has namespaces and values from that namespaces.
+      additionalProperties: true
+      example:
+        "<namespace-1>":
+          someKey: "someValue"
+        "<namespace-2>": 42
 
     PresentationClaims:
       type: object
@@ -3604,7 +3647,7 @@ components:
         clientId: e0fc74f8-d2eb-4e45-a08a-2e32d2bc71e4
         walletRequestId: RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8
         pollingUrl: "/request/status"
-        walletRequestUri: "haip-vp://wallet.stage.bankid.cz?client_id=x509_san_dns:wallet.stage.bankid.cz&amp;request_uri=https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
+        walletRequestUri: "https://wallet.stage.bankid.cz/request.jwt/RKA4CREJjzL-mMf1cDKbH3AjuhhaVMPTm7q8_dsiby8"
     userInfo:
       value:
         sub: 23f1ac00-5d54-4169-a288-794ae2ead0c4
