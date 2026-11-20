@@ -439,11 +439,10 @@ components:
       oneOf:
         - $ref: '#/components/schemas/ByJtis'
         - $ref: '#/components/schemas/ByStatusListUri'
-      descriminator:
-        propertyName: type
-        mapping: 
-          ByJtis: '#/components/schemas/ByJtis'
-          ByStatusListUri: '#/components/ByStatusListUri'
+      propertyName: type
+      mapping:
+        ByJtis: '#/components/schemas/ByJtis'
+        ByStatusListUri: '#/components/ByStatusListUri'
 
     ByJtis:
       type: object
@@ -467,15 +466,14 @@ components:
 
     RevokeResult:
       oneOf:
-        - ref: '#/components/schemas/Jtis'
-        - ref: '#/components/schemas/StatusList'
-        - ref: '#/components/schemas/Empty'
-      descriminator:
-        propertyName: type
-        mapping:
-          Jtis: '#/components/schemas/Jtis'
-          StatusList: '#/components/schemas/StatusList'
-          Empty: '#/components/schemas/Empty'
+        - $ref: '#/components/schemas/Jtis'
+        - $ref: '#/components/schemas/StatusList'
+        - $ref: '#/components/schemas/Empty'
+      propertyName: type
+      mapping:
+        Jtis: '#/components/schemas/Jtis'
+        StatusList: '#/components/schemas/StatusList'
+        Empty: '#/components/schemas/Empty'
 
     Jtis:
       type: object
