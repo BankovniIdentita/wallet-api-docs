@@ -166,7 +166,38 @@ paths:
                     type: integer
                 required:
                   - c_nonce
-
+  
+  /{issuer_id}/revoke:
+    post:
+      summary: Revoke Endpoint
+      description: The Revoke Endpoint is used to revoke credentials with jtis or status uri and idx.
+      security:
+        - BearerAuth: [ ]
+      parameters:
+        - in: path
+          name: issuer_id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RevokeRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RevokeResult'
+        '400':
+          description: Error response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   securitySchemes:
     BearerAuth:
@@ -403,6 +434,73 @@ components:
         transaction_id:
           type: string
 
+    
+    RevokeRequest:
+      oneOf:
+        - $ref: '#/components/schemas/ByJtis'
+        - $ref: '#/components/schemas/ByStatusListUri'
+      propertyName: type
+      mapping:
+        ByJtis: '#/components/schemas/ByJtis'
+        ByStatusListUri: '#/components/ByStatusListUri'
+
+    ByJtis:
+      type: object
+      required: [jtis]
+      properties:
+        jtis:
+          type: array
+          items:
+            type: string
+
+    ByStatusListUri:
+      type: object
+      required: [statusListUri, idx]
+      properties:
+        statusListUri:
+          type: string
+        idx:
+          type: array
+          items:
+            type: integer
+
+    RevokeResult:
+      oneOf:
+        - $ref: '#/components/schemas/Jtis'
+        - $ref: '#/components/schemas/StatusList'
+        - $ref: '#/components/schemas/Empty'
+      propertyName: type
+      mapping:
+        Jtis: '#/components/schemas/Jtis'
+        StatusList: '#/components/schemas/StatusList'
+        Empty: '#/components/schemas/Empty'
+
+    Jtis:
+      type: object
+      description: Represents revoke result with jtis request object
+      properties:
+        jti:
+          type: array
+          items:
+            type: string
+    
+    StatusList:
+      type: object
+      description: Represents revoke result with status list request object
+      properties:
+        statusList:
+          type: array
+          items:
+            type: string
+        idxs:
+          type: array
+          items:
+            type: integer
+    
+    Empty:
+      type: object
+      description: Represents empty response
+          
     Error:
       type: object
       required:
